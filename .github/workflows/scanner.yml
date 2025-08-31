@@ -1,0 +1,62 @@
+name: 🤖 Scanner Crypto ETH/BTC
+
+# Executa a cada 15 minutos, 24/7
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # A cada 15 minutos
+  
+  # Permite execução manual também
+  workflow_dispatch:
+
+# Permissões necessárias
+permissions:
+  contents: read
+
+jobs:
+  scanner:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. Checkout do código
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+    
+    # 2. Setup Python
+    - name: 🐍 Setup Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    # 3. Instalar dependências
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ccxt==4.1.64 pandas==2.0.3 requests==2.31.0 ta==0.10.2
+    
+    # 4. Executar scanner
+    - name: 🚀 Run Crypto Scanner
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        echo "🤖 Iniciando Scanner GitHub Actions..."
+        python scanner_github_actions.py
+    
+    # 5. Cleanup (opcional)
+    - name: 🧹 Cleanup
+      if: always()
+      run: |
+        echo "✅ Scanner finalizado!"
+        echo "📊 Próxima execução em 15 minutos"
+        
+    # 6. Upload logs em caso de erro
+    - name: 📋 Upload Logs on Failure  
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: scanner-logs
+        path: |
+          *.log
+          last_alerts.txt
+        retention-days: 7
