@@ -10,7 +10,7 @@ import warnings
 from ta.trend import EMAIndicator, MACD, ADXIndicator, SMAIndicator
 from ta.momentum import RSIIndicator, StochRSIIndicator
 from ta.volatility import AverageTrueRange, BollingerBands
-from ta.volume import OnBalanceVolumeIndicator, VolumeSMAIndicator
+from ta.volume import OnBalanceVolumeIndicator
 
 # Correção para compatibilidade NumPy/Pandas
 import numpy as np
