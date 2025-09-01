@@ -27,7 +27,7 @@ jobs:
         pip install requests==2.31.0
         pip install python-telegram-bot==20.3
         pip install ta==0.10.2
-        pip install ccxt==4.1.0
+        pip install ccxt==4.4.97
         
     - name: 🚀 Run ETH/BTC Scanner
       env:
