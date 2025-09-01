@@ -28,20 +28,20 @@ jobs:
         
     - name: 📦 Install Core Dependencies
       run: |
-        # Instalar numpy primeiro para evitar conflitos
-        pip install --no-cache-dir numpy==1.21.6
+        # Instalar versões compatíveis com Python 3.11
+        pip install --no-cache-dir numpy==1.24.3
         
-        # Instalar pandas com versão compatível
-        pip install --no-cache-dir --no-binary=pandas pandas==1.5.3
+        # Instalar pandas compatível
+        pip install --no-cache-dir pandas==2.0.3
         
         # Verificar compatibilidade
         python -c "import numpy as np; import pandas as pd; print(f'NumPy: {np.__version__}, Pandas: {pd.__version__}')"
         
     - name: 📈 Install Analysis Libraries
       run: |
-        pip install scikit-learn==1.1.3
+        pip install scikit-learn==1.3.0
         pip install ta==0.10.2
-        pip install ccxt==4.2.0
+        pip install ccxt==4.4.97
         pip install requests==2.31.0
         pip install python-telegram-bot==20.3
         
