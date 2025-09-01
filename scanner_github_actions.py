@@ -745,37 +745,57 @@ def executar_scanner():
                     alertas_enviados_count += 1
                 time.sleep(2)  # Evitar rate limiting
         
+        # Encontre esta parte no final da função executar_scanner() e substitua:
+
         # Resumo final
         print(f"\n✅ SCANNER FINALIZADO")
         print(f"📨 Alertas enviados: {alertas_enviados_count}")
         print(f"🕒 Próxima execução: em 10 minutos")
         
-        ## SEMPRE enviar status quando não há sinais
-if alertas_enviados_count == 0:
-    agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
-    
-    # Verificar quantos sinais estão em aberto
-    sinais = carregar_sinais_monitorados()
-    sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
-    
-    mensagem_resumo = (
-        f"🤖 *Scanner ETH/BTC - Status*\n\n"
-        f"⏰ {agora}\n"
-        f"📊 Analisados: BTC/USDT, ETH/USDT\n"
-        f"🔍 Setups verificados: 6 por moeda\n"
-        f"📈 Resultado: Nenhum novo sinal\n"
-        f"📝 Sinais monitorados: {sinais_abertos}\n\n"
-        f"💭 *Situação atual:*\n"
-        f"• RSI fora das zonas de reversão\n"
-        f"• Sem breakouts significativos\n"
-        f"• MACD sem cruzamentos recentes\n"
-        f"• Aguardando melhores condições\n\n"
-        f"⏰ Próxima verificação: 15 minutos"
-    )
-    enviar_telegram(mensagem_resumo)
-    print("✅ Status detalhado enviado ao Telegram")
+        # SEMPRE enviar status quando não há sinais
+        if alertas_enviados_count == 0:
+            agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
+            
+            # Verificar quantos sinais estão em aberto
+            sinais = carregar_sinais_monitorados()
+            sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
+            
+            mensagem_resumo = (
+                f"🤖 *Scanner ETH/BTC - Status*\n\n"
+                f"⏰ {agora}\n"
+                f"📊 Analisados: BTC/USDT, ETH/USDT\n"
+                f"🔍 Setups verificados: 6 por moeda\n"
+                f"📈 Resultado: Nenhum novo sinal\n"
+                f"📝 Sinais monitorados: {sinais_abertos}\n\n"
+                f"💭 *Situação atual:*\n"
+                f"• RSI fora das zonas de reversão\n"
+                f"• Sem breakouts significativos\n"
+                f"• MACD sem cruzamentos recentes\n"
+                f"• ADX aguardando força\n"
+                f"• Aguardando melhores condições\n\n"
+                f"⏰ Próxima verificação: 15 minutos\n"
+                f"🎯 Sistema ativo e operacional"
+            )
+            enviar_telegram(mensagem_resumo)
+            print("✅ Status detalhado enviado ao Telegram")
         
         return True
+        
+    except Exception as e:
+        logging.error(f"❌ Erro crítico no scanner: {e}")
+        print(f"❌ ERRO CRÍTICO: {e}")
+        
+        # Enviar alerta de erro
+        if TOKEN and TOKEN != "dummy_token":
+            mensagem_erro = (
+                f"🚨 *ERRO NO SCANNER*\n\n"
+                f"❌ {str(e)[:100]}...\n"
+                f"⏰ {datetime.datetime.utcnow().strftime('%H:%M UTC')}\n"
+                f"🔧 Verifique os logs do GitHub Actions"
+            )
+            enviar_telegram(mensagem_erro)
+        
+        return False
         
     except Exception as e:
         logging.error(f"❌ Erro crítico no scanner: {e}")
