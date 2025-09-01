@@ -88,17 +88,15 @@ jobs:
         TZ: 'UTC'
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        export PATH="$HOME/miniconda/bin:$PATH"
-        source activate scanner
-        
         echo "🎯 Iniciando Scanner ETH/BTC Focus..."
         echo "📊 Analisando BTC/USDT e ETH/USDT com múltiplos timeframes..."
         echo "⏰ Executado em: $(date)"
         echo "🔍 Timeframes: 1h + 4h"
         echo "📈 Setups: 10+ configurações avançadas"
+        echo "🔐 Variáveis Telegram: $(env | grep TELEGRAM | wc -l)"
         echo ""
         
-        # Executar com tratamento de erro
+        # Executar scanner
         if python scanner_github_actions.py; then
             echo "✅ Scanner executado com sucesso!"
         else
