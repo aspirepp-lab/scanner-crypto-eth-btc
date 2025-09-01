@@ -1,70 +1,39 @@
-name: 🎯 Scanner Crypto ETH/BTC Focus
+name: Scanner Crypto ETH/BTC Focus
 
-# Executa a cada 15 minutos, 24/7
 on:
   schedule:
-    - cron: '*/10 * * * *'  # A cada 10 minutos
-  
-  # Permite execução manual também
-  workflow_dispatch:
-
-# Permissões necessárias
-permissions:
-  contents: read
+    # Executa a cada 15 minutos durante horário de trading
+    - cron: '*/15 6-23 * * *'
+  workflow_dispatch: # Permite execução manual
 
 jobs:
-  scanner:
+  crypto-scanner:
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Timeout de segurança
     
     steps:
-    # 1. Checkout do código
-    - name: 📥 Checkout Repository
+    - name: 🏁 Checkout Repository
       uses: actions/checkout@v4
-    
-    # 2. Setup Python
-    - name: 🐍 Setup Python 3.9
+      
+    - name: 🐍 Setup Python 3.11
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
-        cache: 'pip'
-    
-    # 3. Instalar dependências
+        python-version: '3.11'
+        
     - name: 📦 Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    # 4. Executar scanner
+        pip install numpy==1.24.3
+        pip install pandas==2.0.3
+        pip install requests==2.31.0
+        pip install python-telegram-bot==20.3
+        pip install ta==0.10.2
+        
     - name: 🚀 Run ETH/BTC Scanner
       env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        CHAT_ID: ${{ secrets.CHAT_ID }}
       run: |
         echo "🎯 Iniciando Scanner ETH/BTC Focus..."
         echo "📊 Analisando BTC/USDT e ETH/USDT com 6 setups..."
         echo "⏰ Executado em: $(date)"
         python scanner_github_actions.py
-        echo "✅ Scanner finalizado!"
-        echo "🔄 Próxima execução: em 10 minutos"
-    
-    # 5. Upload logs em caso de erro
-    - name: 📋 Upload Logs on Failure  
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: scanner-logs-${{ github.run_number }}
-        path: |
-          *.log
-          *.json
-        retention-days: 7
-        
-    # 6. Commit arquivos de sinais (se houver alterações)
-    - name: 💾 Commit Signal Files
-      if: success()
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add -A
-        git diff --quiet && git diff --staged --quiet || git commit -m "🤖 Atualizar sinais monitorados - $(date)"
-        git push || echo "Nada para commitar"
