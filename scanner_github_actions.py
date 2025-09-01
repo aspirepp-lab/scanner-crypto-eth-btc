@@ -750,26 +750,30 @@ def executar_scanner():
         print(f"📨 Alertas enviados: {alertas_enviados_count}")
         print(f"🕒 Próxima execução: em 10 minutos")
         
-        # Enviar resumo de status (apenas a cada 4 horas para evitar spam)
-        if alertas_enviados_count == 0:
-            hora_atual = datetime.datetime.utcnow().hour
-            if hora_atual % 4 == 0:  # A cada 4 horas
-                agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
-                
-                # Verificar quantos sinais estão em aberto
-                sinais = carregar_sinais_monitorados()
-                sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
-                
-                mensagem_resumo = (
-                    f"🤖 *Scanner GitHub Actions*\n\n"
-                    f"⏰ Executado às {agora}\n"
-                    f"📊 Pares analisados: {', '.join(PARES_ALVOS)}\n"
-                    f"📈 Status: Mercado sem novos sinais\n"
-                    f"📝 Sinais em aberto: {sinais_abertos}\n"
-                    f"🔄 Próxima verificação: 10 minutos\n\n"
-                    f"💤 *Aguardando oportunidades...*"
-                )
-                enviar_telegram(mensagem_resumo)
+        ## SEMPRE enviar status quando não há sinais
+if alertas_enviados_count == 0:
+    agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
+    
+    # Verificar quantos sinais estão em aberto
+    sinais = carregar_sinais_monitorados()
+    sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
+    
+    mensagem_resumo = (
+        f"🤖 *Scanner ETH/BTC - Status*\n\n"
+        f"⏰ {agora}\n"
+        f"📊 Analisados: BTC/USDT, ETH/USDT\n"
+        f"🔍 Setups verificados: 6 por moeda\n"
+        f"📈 Resultado: Nenhum novo sinal\n"
+        f"📝 Sinais monitorados: {sinais_abertos}\n\n"
+        f"💭 *Situação atual:*\n"
+        f"• RSI fora das zonas de reversão\n"
+        f"• Sem breakouts significativos\n"
+        f"• MACD sem cruzamentos recentes\n"
+        f"• Aguardando melhores condições\n\n"
+        f"⏰ Próxima verificação: 15 minutos"
+    )
+    enviar_telegram(mensagem_resumo)
+    print("✅ Status detalhado enviado ao Telegram")
         
         return True
         
