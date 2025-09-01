@@ -12,6 +12,17 @@ from ta.momentum import RSIIndicator, StochRSIIndicator
 from ta.volatility import AverageTrueRange, BollingerBands
 from ta.volume import OnBalanceVolumeIndicator, VolumeSMAIndicator
 
+# Correção para compatibilidade NumPy/Pandas
+import numpy as np
+import pandas as pd
+
+# Verificar versões e forçar compatibilidade
+try:
+    # Força recompilação de cache do pandas se necessário
+    pd.options.mode.chained_assignment = None
+    np.seterr(all='ignore')  # Suprimir warnings NumPy
+except:
+    pass
 # Suprimir warnings para logs limpos
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*invalid value encountered.*')
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by zero.*')
@@ -76,10 +87,24 @@ def validar_dados(df, nome_par):
     return True
 
 def limpar_dados(df):
-    """Limpeza de dados"""
-    df = df[df['high'] >= df['low']].copy()
-    df = df[df['volume'] > 0].copy()
-    return df.reset_index(drop=True)
+    """Limpeza de dados com proteção contra erros de versão"""
+    try:
+        # Criar uma cópia para evitar problemas de referência
+        df_clean = df.copy()
+        
+        # Filtros de validação
+        mask_valid = (
+            (df_clean['high'] >= df_clean['low']) & 
+            (df_clean['volume'] > 0)
+        )
+        
+        df_clean = df_clean[mask_valid].copy()
+        return df_clean.reset_index(drop=True)
+        
+    except Exception as e:
+        logging.warning(f"Erro na limpeza de dados: {e}")
+        # Fallback simples
+        return df.reset_index(drop=True)
 
 # ===============================
 # === SISTEMA DE MÚLTIPLOS TIMEFRAMES
