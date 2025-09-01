@@ -1,9 +1,9 @@
-name: 🤖 Scanner Crypto ETH/BTC
+name: 🎯 Scanner Crypto ETH/BTC Focus
 
 # Executa a cada 15 minutos, 24/7
 on:
   schedule:
-    - cron: '*/15 * * * *'  # A cada 15 minutos
+    - cron: '*/10 * * * *'  # A cada 10 minutos
   
   # Permite execução manual também
   workflow_dispatch:
@@ -15,6 +15,7 @@ permissions:
 jobs:
   scanner:
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Timeout de segurança
     
     steps:
     # 1. Checkout do código
@@ -32,31 +33,38 @@ jobs:
     - name: 📦 Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ccxt==4.1.64 pandas==2.0.3 requests==2.31.0 ta==0.10.2
+        pip install -r requirements.txt
     
     # 4. Executar scanner
-    - name: 🚀 Run Crypto Scanner
+    - name: 🚀 Run ETH/BTC Scanner
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       run: |
-        echo "🤖 Iniciando Scanner GitHub Actions..."
+        echo "🎯 Iniciando Scanner ETH/BTC Focus..."
+        echo "📊 Analisando BTC/USDT e ETH/USDT com 6 setups..."
+        echo "⏰ Executado em: $(date)"
         python scanner_github_actions.py
-    
-    # 5. Cleanup (opcional)
-    - name: 🧹 Cleanup
-      if: always()
-      run: |
         echo "✅ Scanner finalizado!"
-        echo "📊 Próxima execução em 15 minutos"
-        
-    # 6. Upload logs em caso de erro
+        echo "🔄 Próxima execução: em 10 minutos"
+    
+    # 5. Upload logs em caso de erro
     - name: 📋 Upload Logs on Failure  
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: scanner-logs
+        name: scanner-logs-${{ github.run_number }}
         path: |
           *.log
-          last_alerts.txt
+          *.json
         retention-days: 7
+        
+    # 6. Commit arquivos de sinais (se houver alterações)
+    - name: 💾 Commit Signal Files
+      if: success()
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add -A
+        git diff --quiet && git diff --staged --quiet || git commit -m "🤖 Atualizar sinais monitorados - $(date)"
+        git push || echo "Nada para commitar"
