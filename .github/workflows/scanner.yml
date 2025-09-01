@@ -9,7 +9,7 @@ on:
 jobs:
   crypto-scanner:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     
     steps:
     - name: 🏁 Checkout Repository
@@ -19,18 +19,62 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+        cache: 'pip'
         
-    - name: 📦 Install Dependencies
+    - name: 🔧 Prepare Environment
       run: |
-        python -m pip install --upgrade pip
-        pip install numpy==1.24.3
-        pip install pandas==2.0.3
-        pip install scikit-learn==1.3.0
+        python -m pip install --upgrade pip setuptools wheel
+        pip cache purge
+        
+    - name: 📦 Install Core Dependencies
+      run: |
+        # Instalar numpy primeiro para evitar conflitos
+        pip install --no-cache-dir numpy==1.21.6
+        
+        # Instalar pandas com versão compatível
+        pip install --no-cache-dir --no-binary=pandas pandas==1.5.3
+        
+        # Verificar compatibilidade
+        python -c "import numpy as np; import pandas as pd; print(f'NumPy: {np.__version__}, Pandas: {pd.__version__}')"
+        
+    - name: 📈 Install Analysis Libraries
+      run: |
+        pip install scikit-learn==1.1.3
+        pip install ta==0.10.2
+        pip install ccxt==4.2.0
         pip install requests==2.31.0
         pip install python-telegram-bot==20.3
-        pip install ta==0.10.2
-        pip install ccxt==4.4.97
-        pip install pandas-ta==0.3.14b
+        
+    - name: 🔍 Install Optional Libraries
+      continue-on-error: true
+      run: |
+        pip install pandas-ta==0.3.14b || echo "pandas-ta installation failed, continuing..."
+        
+    - name: ✅ Verify Installation
+      run: |
+        python -c "
+        import sys
+        print('Python version:', sys.version)
+        
+        required_modules = ['pandas', 'numpy', 'ccxt', 'ta', 'requests']
+        for module in required_modules:
+            try:
+                __import__(module)
+                print(f'✅ {module}: OK')
+            except ImportError as e:
+                print(f'❌ {module}: FAILED - {e}')
+                sys.exit(1)
+        
+        # Teste específico pandas/numpy
+        try:
+            import pandas as pd
+            import numpy as np
+            df = pd.DataFrame({'test': [1, 2, 3]})
+            print(f'✅ Pandas/NumPy compatibility: OK')
+        except Exception as e:
+            print(f'❌ Pandas/NumPy compatibility: FAILED - {e}')
+            sys.exit(1)
+        "
         
     - name: 🚀 Run ETH/BTC Scanner
       timeout-minutes: 8
@@ -38,17 +82,50 @@ jobs:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TZ: 'UTC'
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         echo "🎯 Iniciando Scanner ETH/BTC Focus..."
-        echo "📊 Analisando BTC/USDT e ETH/USDT com 6 setups..."
+        echo "📊 Analisando BTC/USDT e ETH/USDT com múltiplos timeframes..."
         echo "⏰ Executado em: $(date)"
-        python scanner_github_actions.py
+        echo "🔍 Timeframes: 1h + 4h"
+        echo "📈 Setups: 10+ configurações avançadas"
+        echo ""
+        
+        # Executar com tratamento de erro
+        if python scanner_github_actions.py; then
+            echo "✅ Scanner executado com sucesso!"
+        else
+            echo "❌ Scanner falhou!"
+            exit 1
+        fi
         
     - name: 📋 Debug Info on Failure
       if: failure()
       run: |
-        echo "📊 Informações de debug:"
-        echo "Python: $(python --version)"
-        echo "Bibliotecas instaladas:"
-        pip list | grep -E "(pandas|numpy|ccxt|ta|requests)"
-        echo "Variáveis de ambiente configuradas: $(env | grep TELEGRAM | wc -l)"
+        echo "🔍 === INFORMAÇÕES DE DEBUG ==="
+        echo "📅 Data/Hora: $(date)"
+        echo "🐍 Python: $(python --version)"
+        echo "📁 Diretório: $(pwd)"
+        echo "📄 Arquivos Python:"
+        ls -la *.py || echo "Nenhum arquivo Python encontrado"
+        echo ""
+        echo "📦 Bibliotecas instaladas:"
+        pip list | grep -E "(pandas|numpy|ccxt|ta|requests|telegram)" || echo "Bibliotecas não encontradas"
+        echo ""
+        echo "🔐 Variáveis de ambiente:"
+        echo "TELEGRAM configurado: $(env | grep TELEGRAM | wc -l) variáveis"
+        echo ""
+        echo "💾 Espaço em disco:"
+        df -h
+        echo ""
+        echo "🧠 Memória:"
+        free -h
+        
+    - name: 🧹 Cleanup on Failure
+      if: failure()
+      run: |
+        # Limpar cache pip em caso de falha
+        pip cache purge || true
+        # Remover arquivos temporários
+        find . -name "*.pyc" -delete || true
+        find . -name "__pycache__" -type d -exec rm -rf {} + || true
