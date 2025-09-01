@@ -28,14 +28,23 @@ jobs:
         
     - name: 📦 Install Core Dependencies
       run: |
-        # Instalar versões compatíveis com Python 3.11
-        pip install --no-cache-dir numpy==1.24.3
+        # Forçar instalação limpa para evitar conflitos binários
+        pip install --force-reinstall --no-deps numpy==1.24.3
+        pip install --force-reinstall --no-deps pandas==2.0.3
         
-        # Instalar pandas compatível
-        pip install --no-cache-dir pandas==2.0.3
+        # Instalar dependências do pandas
+        pip install python-dateutil==2.8.2 pytz==2023.3
         
         # Verificar compatibilidade
-        python -c "import numpy as np; import pandas as pd; print(f'NumPy: {np.__version__}, Pandas: {pd.__version__}')"
+        python -c "
+        import numpy as np
+        import pandas as pd
+        print(f'NumPy: {np.__version__}')
+        print(f'Pandas: {pd.__version__}')
+        # Teste básico
+        df = pd.DataFrame({'test': [1,2,3]})
+        print('Teste pandas: OK')
+        "
         
     - name: 📈 Install Analysis Libraries
       run: |
