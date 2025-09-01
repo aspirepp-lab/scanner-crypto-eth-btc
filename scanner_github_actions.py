@@ -1412,6 +1412,6 @@ if __name__ == "__main__":
         exit(0)
     else:
         print("💥 Scanner avançado falhou!")
-        exit(1)MÉDIO", "emoji": "🟨", "cor": "Amarelo"}
+        exit(1)MÉDIO", "emoji": "🚨", "cor": "Amarelo"}
     elif score >= 5.5:
         return {"nivel": "ALTO", "emoji": "
