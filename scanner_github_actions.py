@@ -1413,5 +1413,3 @@ if __name__ == "__main__":
     else:
         print("💥 Scanner avançado falhou!")
         exit(1)
-    elif score >= 5.5:
-        return {"nivel": "ALTO", "emoji": "
