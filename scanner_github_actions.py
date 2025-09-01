@@ -6,8 +6,6 @@ import requests
 import os
 import logging
 import json
-from threading import Thread, Lock, Event
-from flask import Flask, request
 from ta.trend import EMAIndicator, MACD, ADXIndicator
 from ta.momentum import RSIIndicator
 from ta.volatility import AverageTrueRange
@@ -16,48 +14,43 @@ from ta.volume import OnBalanceVolumeIndicator
 try:
     import pandas_ta as pta
 except ImportError:
-    raise Exception("Biblioteca pandas_ta não instalada. Execute: pip install pandas_ta")
+    print("⚠️ pandas_ta não disponível, usando cálculo manual do Supertrend")
+    pta = None
 
 # ===============================
 # === CONFIGURAÇÕES
 # ===============================
 PARES_ALVOS = ['BTC/USDT', 'ETH/USDT']
-timeframe = '4h'
+timeframe = '1h'
 limite_candles = 100
-intervalo_em_segundos = 60 * 10  # 10 minutos para monitoramento mais frequente
 TEMPO_REENVIO = 60 * 30  # 30 minutos entre alertas do mesmo par
 
 # Configurações do Telegram
 TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-WEBHOOK_URL = os.getenv("RAILWAY_WEBHOOK_URL") or os.getenv("REPLIT_WEBHOOK_URL")
 
 if not TOKEN or not CHAT_ID:
     print("⚠️ AVISO: Configure TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID para receber alertas")
-    print("⚠️ Definindo valores dummy para permitir inicialização...")
     TOKEN = "dummy_token"
     CHAT_ID = "dummy_chat"
 
 # Arquivos de dados
-ARQUIVO_SINAIS_MONITORADOS = 'sinais_eth_btc.json'
-ARQUIVO_ALERTAS = 'alertas_eth_btc.json'
+ARQUIVO_SINAIS_MONITORADOS = 'sinais_monitorados.json'
 
 # Logging
 logging.basicConfig(
-    filename='scanner_eth_btc.log',
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# Controle de threads
-lock_alertas = Lock()
-scanner_ativo = Event()
+# Controle de alertas
 alertas_enviados = {}
 
 # ===============================
-# === GESTÃO DE SINAIS
+# === GESTÃO DE SINAIS MONITORADOS
 # ===============================
+
 def carregar_sinais_monitorados():
     try:
         with open(ARQUIVO_SINAIS_MONITORADOS, 'r') as f:
@@ -85,6 +78,7 @@ def registrar_sinal_monitorado(par, setup_id, preco_entrada, alvo, stop):
     print(f"📝 Sinal registrado: {par} - {setup_id}")
 
 def verificar_sinais_monitorados(exchange):
+    """Verifica status dos sinais em aberto"""
     sinais = carregar_sinais_monitorados()
     sinais_atualizados = []
     
@@ -104,14 +98,17 @@ def verificar_sinais_monitorados(exchange):
         
         if preco_atual >= sinal['alvo']:
             sinal['status'] = "🎯 Alvo atingido"
+            sinal['preco_final'] = preco_atual
         elif preco_atual <= sinal['stop']:
             sinal['status'] = "🛑 Stop atingido"
+            sinal['preco_final'] = preco_atual
         else:
             # Verificar expiração (24 horas)
             dt_alerta = datetime.datetime.fromisoformat(sinal['timestamp'])
             tempo_passado = datetime.datetime.utcnow() - dt_alerta
             if tempo_passado.total_seconds() >= 60 * 60 * 24:
                 sinal['status'] = "⏰ Expirado (24h)"
+                sinal['preco_final'] = preco_atual
         
         if sinal['status'] != status_anterior:
             sinal['atualizado_em'] = datetime.datetime.utcnow().isoformat()
@@ -119,85 +116,61 @@ def verificar_sinais_monitorados(exchange):
     
     if sinais_atualizados:
         salvar_sinais_monitorados(sinais)
+        
+        # Enviar notificações de fechamento
+        for sinal in sinais_atualizados:
+            enviar_notificacao_fechamento(sinal)
     
     return sinais_atualizados
 
-# ===============================
-# === CONTROLE TELEGRAM/FLASK
-# ===============================
-app = Flask(__name__)
-
-@app.route(f"/{TOKEN}", methods=['POST'])
-def receber_mensagem():
-    global scanner_ativo
+def enviar_notificacao_fechamento(sinal):
+    """Envia notificação quando sinal é fechado"""
     try:
-        msg = request.get_json()
-        if 'message' in msg and 'text' in msg['message']:
-            texto = msg['message']['text']
-            chat_id_msg = msg['message']['chat']['id']
-            
-            if str(chat_id_msg) != str(CHAT_ID):
-                return "Ignorado", 200
-            
-            if texto == '/start':
-                scanner_ativo.set()
-                enviar_telegram("✅ *Scanner ETH/BTC ativado!*")
-            elif texto == '/stop':
-                scanner_ativo.clear()
-                enviar_telegram("🛑 *Scanner ETH/BTC pausado!*")
-            elif texto == '/status':
-                status = "✅ Ativo" if scanner_ativo.is_set() else "⛔ Inativo"
-                enviar_telegram(f"📊 *Status Scanner ETH/BTC:* {status}")
-            elif texto == '/sinais':
-                mostrar_sinais_abertos()
-    except Exception as e:
-        logging.error(f"Erro no webhook: {e}")
-    
-    return "OK", 200
-
-def configurar_webhook():
-    if TOKEN == "dummy_token" or not WEBHOOK_URL:
-        print("⚠️ Webhook não configurado - TOKEN ou WEBHOOK_URL ausentes")
-        return
-    try:
-        endpoint = f"https://api.telegram.org/bot{TOKEN}/setWebhook"
-        resposta = requests.post(endpoint, json={"url": f"{WEBHOOK_URL}/{TOKEN}"}, timeout=10)
-        if resposta.ok:
-            print("✅ Webhook configurado com sucesso!")
-            print(f"🔗 Webhook URL: {WEBHOOK_URL}/{TOKEN}")
+        dt_inicio = datetime.datetime.fromisoformat(sinal['timestamp'])
+        dt_fim = datetime.datetime.fromisoformat(sinal['atualizado_em'])
+        duracao = dt_fim - dt_inicio
+        horas = int(duracao.total_seconds() // 3600)
+        minutos = int((duracao.total_seconds() % 3600) // 60)
+        tempo_duracao = f"{horas}h {minutos}min"
+        
+        resultado = ""
+        if "Alvo atingido" in sinal['status']:
+            resultado = "🎉 SUCESSO"
+        elif "Stop atingido" in sinal['status']:
+            resultado = "⚠️ STOP"
         else:
-            print(f"❌ Erro ao configurar webhook: {resposta.text}")
-    except Exception as e:
-        print(f"⚠️ Erro ao configurar webhook: {e}")
-
-def iniciar_flask():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
-
-def mostrar_sinais_abertos():
-    sinais = carregar_sinais_monitorados()
-    sinais_abertos = [s for s in sinais if s['status'] == 'em_aberto']
-    
-    if not sinais_abertos:
-        enviar_telegram("📭 *Nenhum sinal em aberto no momento*")
-        return
-    
-    mensagem = f"📊 *{len(sinais_abertos)} sinais em aberto:*\n\n"
-    for sinal in sinais_abertos:
-        dt = datetime.datetime.fromisoformat(sinal['timestamp'])
-        tempo = dt.strftime('%d/%m %H:%M')
-        mensagem += (
-            f"• *{sinal['par']}* ({sinal['setup']})\n"
-            f"  💰 Entrada: {sinal['entrada']}\n"
-            f"  🎯 Alvo: {sinal['alvo']} | 🛑 Stop: {sinal['stop']}\n"
-            f"  📅 {tempo}\n\n"
+            resultado = "⏰ EXPIRADO"
+            
+        mensagem = (
+            f"📊 *SINAL FINALIZADO*\n\n"
+            f"{resultado}\n\n"
+            f"📊 *Par:* `{sinal['par']}`\n"
+            f"📋 *Setup:* {sinal['setup']}\n"
+            f"💰 *Entrada:* `${sinal['entrada']:.2f}`\n"
+            f"🏁 *Saída:* `${sinal.get('preco_final', 'N/A')}`\n"
+            f"⏱️ *Duração:* {tempo_duracao}\n"
+            f"📍 *Status:* {sinal['status']}"
         )
-    
-    enviar_telegram(mensagem)
+        
+        enviar_telegram(mensagem)
+        
+    except Exception as e:
+        logging.error(f"Erro ao enviar notificação de fechamento: {e}")
 
 # ===============================
 # === DADOS FUNDAMENTAIS
 # ===============================
+
+def abreviar_valor(valor):
+    if valor >= 1_000_000_000_000:
+        return f"${valor/1_000_000_000_000:.2f}T"
+    elif valor >= 1_000_000_000:
+        return f"${valor/1_000_000_000:.2f}B"
+    elif valor >= 1_000_000:
+        return f"${valor/1_000_000:.2f}M"
+    else:
+        return f"${valor:,.2f}"
+
 def obter_dados_fundamentais():
     try:
         # Dados gerais do mercado
@@ -211,16 +184,12 @@ def obter_dados_fundamentais():
         if market_cap is None or btc_dominance is None:
             return "*⚠️ Dados fundamentais indisponíveis*"
         
-        # Formatação dos valores
-        def abreviar_valor(valor):
-            if valor >= 1_000_000_000_000:
-                return f"${valor/1_000_000_000_000:.2f}T"
-            elif valor >= 1_000_000_000:
-                return f"${valor/1_000_000_000:.2f}B"
-            else:
-                return f"${valor/1_000_000:.0f}M"
-        
         emoji_cap = "↗️" if market_cap_change >= 0 else "↘️"
+        
+        # Alerta de mercado
+        alerta_mercado = ""
+        if market_cap_change < -2:
+            alerta_mercado = "\n⚠️ *Queda relevante na capitalização nas últimas 24h.*"
         
         # Índice Fear & Greed
         try:
@@ -235,6 +204,7 @@ def obter_dados_fundamentais():
             f"• Cap. Total: {abreviar_valor(market_cap)} {emoji_cap} ({market_cap_change:+.1f}%)\n"
             f"• Domínio BTC: {btc_dominance:.1f}%\n"
             f"• Fear & Greed: {fear_greed}"
+            + alerta_mercado
         )
     
     except Exception as e:
@@ -244,367 +214,38 @@ def obter_dados_fundamentais():
 # ===============================
 # === INDICADORES TÉCNICOS
 # ===============================
+
 def calcular_supertrend(df, period=10, multiplier=3):
+    """Cálculo do Supertrend - tenta pandas_ta, senão usa manual"""
     try:
-        supertrend_data = pta.supertrend(
-            high=df['high'], 
-            low=df['low'], 
-            close=df['close'],
-            length=period, 
-            multiplier=multiplier
-        )
-        df['supertrend'] = supertrend_data[f'SUPERT_{period}_{multiplier}'] > 0
-    except:
-        df['supertrend'] = True  # Fallback
-    return df
-
-def detectar_candle_forte(df):
-    candle = df.iloc[-1]
-    corpo = abs(candle['close'] - candle['open'])
-    sombra_sup = candle['high'] - max(candle['close'], candle['open'])
-    sombra_inf = min(candle['close'], candle['open']) - candle['low']
-    return corpo > (sombra_sup * 2) and corpo > (sombra_inf * 2)
-
-def detectar_engolfo_alta(df):
-    if len(df) < 2:
-        return False
-    c1 = df.iloc[-2]  # Candle anterior
-    c2 = df.iloc[-1]  # Candle atual
-    return (c2['close'] > c2['open'] and     # Atual é de alta
-            c1['close'] < c1['open'] and     # Anterior é de baixa
-            c2['open'] < c1['close'] and     # Abertura atual < fechamento anterior
-            c2['close'] > c1['open'])        # Fechamento atual > abertura anterior
-
-# ===============================
-# === SETUPS DE TRADING
-# ===============================
-def verificar_setup_conservador(r, df):
-    """Setup conservador para BTC/ETH - confluência alta"""
-    condicoes = [
-        r['rsi'] < 45,                                           # RSI em sobrevenda moderada
-        r['ema9'] > r['ema21'],                                 # Tendência de curto prazo positiva
-        r['macd'] > r['macd_signal'],                           # MACD positivo
-        r['adx'] > 20,                                          # Tendência forte
-        df['volume'].iloc[-1] > df['volume'].mean() * 1.2,     # Volume acima da média
-        r['close'] > r['ema200'],                               # Preço acima da EMA longa
-        df['supertrend'].iloc[-1] == True                       # Supertrend positivo
-    ]
-    
-    if sum(condicoes) >= 5:  # Pelo menos 5 de 7 condições
-        return {
-            'setup': '🛡️ SETUP CONSERVADOR', 
-            'prioridade': '🟢 BAIXO RISCO', 
-            'emoji': '🛡️',
-            'id': 'conservador'
-        }
-    return None
-
-def verificar_setup_agressivo(r, df):
-    """Setup agressivo para BTC/ETH - entrada rápida"""
-    condicoes = [
-        r['rsi'] < 50,                                          # RSI não sobrecomprado
-        r['ema9'] > r['ema21'],                                 # EMA9 > EMA21
-        r['macd'] > r['macd_signal'],                           # MACD > sinal
-        df['volume'].iloc[-1] > df['volume'].mean(),            # Volume acima da média
-        detectar_candle_forte(df) or detectar_engolfo_alta(df), # Padrão de força
-        r['adx'] > 15                                           # ADX mínimo
-    ]
-    
-    if sum(condicoes) >= 4:  # Pelo menos 4 de 6 condições
-        return {
-            'setup': '⚡ SETUP AGRESSIVO', 
-            'prioridade': '🟡 RISCO MODERADO', 
-            'emoji': '⚡',
-            'id': 'agressivo'
-        }
-    return None
-
-def verificar_setup_reversao(r, df):
-    """Setup de reversão - para entradas em correções"""
-    if len(df) < 5:
-        return None
-    
-    # Verificar se houve queda recente
-    queda_recente = df['close'].iloc[-3:].min() < df['close'].iloc[-5:].max() * 0.95
-    
-    condicoes = [
-        r['rsi'] < 35,                          # RSI em sobrevenda forte
-        queda_recente,                          # Houve correção recente
-        detectar_engolfo_alta(df),              # Padrão de reversão
-        r['obv'] > df['obv'].iloc[-5:].mean(),  # OBV ainda positivo
-        df['volume'].iloc[-1] > df['volume'].mean() * 1.5  # Volume forte
-    ]
-    
-    if sum(condicoes) >= 3:
-        return {
-            'setup': '🔄 SETUP REVERSÃO', 
-            'prioridade': '🟠 OPORTUNIDADE', 
-            'emoji': '🔄',
-            'id': 'reversao'
-        }
-    return None
-
-def calcular_score_setup(r, df, setup_id):
-    """Calcula score de 0-10 para o setup"""
-    score = 0
-    total = 0
-    criterios = []
-    
-    def avaliar(condicao, descricao, peso=1):
-        nonlocal score, total
-        total += peso
-        if condicao:
-            score += peso
-            criterios.append(f"✅ {descricao}")
+        if pta:
+            supertrend_data = pta.supertrend(
+                high=df['high'], 
+                low=df['low'], 
+                close=df['close'],
+                length=period, 
+                multiplier=multiplier
+            )
+            df['supertrend'] = supertrend_data[f'SUPERT_{period}_{multiplier}'] > 0
         else:
-            criterios.append(f"❌ {descricao}")
-    
-    # Critérios básicos (peso 1)
-    avaliar(r['rsi'] < 50, "RSI saudável (<50)")
-    avaliar(r['ema9'] > r['ema21'], "EMA9 > EMA21")
-    avaliar(r['macd'] > r['macd_signal'], "MACD positivo")
-    avaliar(df['volume'].iloc[-1] > df['volume'].mean(), "Volume acima da média")
-    
-    # Critérios importantes (peso 1.5)
-    avaliar(r['adx'] > 20, "Tendência forte (ADX>20)", 1.5)
-    avaliar(r['close'] > r['ema200'], "Acima EMA200", 1.5)
-    avaliar(df['supertrend'].iloc[-1], "Supertrend ativo", 1.5)
-    
-    # Critérios críticos (peso 2)
-    avaliar(detectar_candle_forte(df), "Candle forte", 2)
-    avaliar(df['volume'].iloc[-1] > df['volume'].mean() * 1.5, "Volume muito alto", 2)
-    
-    if total == 0:
-        return 0.0, []
-    
-    score_final = round((score / total) * 10, 1)
-    return score_final, criterios
-
-# ===============================
-# === ALERTAS E COMUNICAÇÃO
-# ===============================
-def pode_enviar_alerta(par, setup):
-    agora = datetime.datetime.utcnow()
-    chave = f"{par}_{setup}"
-    
-    with lock_alertas:
-        if chave in alertas_enviados:
-            delta = (agora - alertas_enviados[chave]).total_seconds()
-            if delta < TEMPO_REENVIO:
-                return False
-        
-        alertas_enviados[chave] = agora
-        return True
-
-def enviar_telegram(mensagem):
-    if TOKEN == "dummy_token":
-        print(f"[TELEGRAM SIMULADO] {mensagem}")
-        return True
-    
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID, 
-        "text": mensagem, 
-        "parse_mode": "Markdown",
-        "disable_web_page_preview": True
-    }
-    
-    try:
-        response = requests.post(url, data=payload, timeout=10)
-        if response.ok:
-            return True
-        else:
-            logging.error(f"Erro Telegram: {response.text}")
-            return False
-    except Exception as e:
-        logging.error(f"Exception Telegram: {e}")
-        return False
-
-def enviar_alerta_completo(par, r, setup_info):
-    preco = r['close']
-    atr = r['atr']
-    
-    # Cálculo de alvos e stops adaptado para BTC/ETH
-    if par == 'BTC/USDT':
-        stop = round(preco - (atr * 1.2), 2)   # Stop mais conservador para BTC
-        alvo = round(preco + (atr * 2.5), 2)   # Alvo moderado
-    else:  # ETH/USDT
-        stop = round(preco - (atr * 1.5), 2)   # Stop normal para ETH
-        alvo = round(preco + (atr * 3.0), 2)   # Alvo mais agressivo
-    
-    # Timestamp
-    agora_utc = datetime.datetime.utcnow()
-    agora_local = agora_utc - datetime.timedelta(hours=3)  # Brasília
-    timestamp_br = agora_local.strftime('%d/%m/%Y %H:%M')
-    
-    # Score do setup
-    score, criterios = calcular_score_setup(r, pd.DataFrame({
-        'close': [r['close']] * 10,
-        'volume': [r['volume']] * 10,
-        'ema9': [r['ema9']] * 10,
-        'ema21': [r['ema21']] * 10,
-        'ema200': [r['ema200']] * 10,
-        'supertrend': [True] * 10,
-        'high': [r['close'] * 1.01] * 10,
-        'low': [r['close'] * 0.99] * 10,
-        'open': [r['close'] * 0.999] * 10
-    }), setup_info.get('id', 'conservador'))
-    
-    # Link TradingView
-    symbol_clean = par.replace("/", "")
-    link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_clean}"
-    
-    # Dados fundamentais
-    resumo_mercado = obter_dados_fundamentais()
-    
-    # Construir mensagem
-    mensagem = (
-        f"{setup_info['emoji']} *{setup_info['setup']}*\n"
-        f"{setup_info['prioridade']}\n\n"
-        f"📊 *Par:* `{par}`\n"
-        f"💰 *Preço:* `${preco:,.2f}`\n"
-        f"🎯 *Alvo:* `${alvo:,.2f}`\n"
-        f"🛑 *Stop:* `${stop:,.2f}`\n"
-        f"📊 *Score:* {score}/10\n\n"
-        f"📈 *Indicadores:*\n"
-        f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
-        f"• Volume: {r['volume']:,.0f}\n"
-        f"• ATR: ${r['atr']:.2f}\n\n"
-        f"🕐 {timestamp_br} (BR)\n"
-        f"📈 [Ver Gráfico]({link_tv})\n\n"
-        f"{resumo_mercado}\n\n"
-        f"*📋 Análise Técnica:*\n"
-    )
-    
-    # Adicionar critérios (máximo 5 para não sobrecarregar)
-    for criterio in criterios[:5]:
-        mensagem += f"{criterio}\n"
-    
-    if len(criterios) > 5:
-        mensagem += f"... e mais {len(criterios)-5} critérios"
-    
-    # Enviar alerta
-    if pode_enviar_alerta(par, setup_info['setup']):
-        if enviar_telegram(mensagem):
-            logging.info(f"Alerta enviado: {par} - {setup_info['setup']} (score: {score})")
-            print(f"✅ {par} - {setup_info['setup']} (score: {score})")
+            # Cálculo manual simplificado
+            high = df['high']
+            low = df['low']
+            close = df['close']
             
-            # Registrar sinal para monitoramento
-            try:
-                registrar_sinal_monitorado(
-                    par=par,
-                    setup_id=setup_info.get('id', 'desconhecido'),
-                    preco_entrada=preco,
-                    alvo=alvo,
-                    stop=stop
-                )
-            except Exception as e:
-                logging.error(f"Erro ao registrar sinal: {e}")
-        else:
-            print(f"❌ Falha ao enviar alerta para {par}")
-    else:
-        print(f"⏳ Alerta recente para {par} - aguardando")
-
-# ===============================
-# === ANÁLISE PRINCIPAL
-# ===============================
-def analisar_par(exchange, par):
-    try:
-        print(f"🔍 Analisando {par}...")
-        
-        # Buscar dados OHLCV
-        ohlcv = exchange.fetch_ohlcv(par, timeframe, limit=limite_candles)
-        if len(ohlcv) < limite_candles:
-            print(f"⚠️ Dados insuficientes para {par}")
-            return
-        
-        # Criar DataFrame
-        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        
-        # Calcular indicadores
-        close = df['close']
-        high = df['high']
-        low = df['low']
-        volume = df['volume']
-        
-        df['ema9'] = EMAIndicator(close, 9).ema_indicator()
-        df['ema21'] = EMAIndicator(close, 21).ema_indicator()
-        df['ema200'] = EMAIndicator(close, 200).ema_indicator()
-        df['rsi'] = RSIIndicator(close, 14).rsi()
-        df['atr'] = AverageTrueRange(high, low, close, 14).average_true_range()
-        
-        macd = MACD(close)
-        df['macd'] = macd.macd()
-        df['macd_signal'] = macd.macd_signal()
-        
-        df['adx'] = ADXIndicator(high, low, close, 14).adx()
-        df['obv'] = OnBalanceVolumeIndicator(close, volume).on_balance_volume()
-        
-        df = calcular_supertrend(df)
-        
-        # Linha atual
-        r = df.iloc[-1]
-        
-        # Verificar setups em ordem de prioridade
-        setups = [
-            verificar_setup_conservador,
-            verificar_setup_agressivo,
-            verificar_setup_reversao
-        ]
-        
-        for verificar_setup in setups:
-            setup_info = verificar_setup(r, df)
-            if setup_info:
-                enviar_alerta_completo(par, r, setup_info)
-                return par  # Retorna o par se encontrou setup
-        
-        print(f"   💭 {par}: Nenhum setup detectado")
-        return None
-        
-    except Exception as e:
-        logging.error(f"Erro na análise de {par}: {e}")
-        print(f"❌ Erro com {par}: {e}"
-# ===============================
-# === INDICADORES TÉCNICOS
-# ===============================
-
-def calcular_supertrend(df, period=10, multiplier=3):
-    """Cálculo manual do Supertrend (sem pandas_ta)"""
-    try:
-        high = df['high']
-        low = df['low']
-        close = df['close']
-        
-        # ATR
-        atr = AverageTrueRange(high, low, close, period).average_true_range()
-        
-        # Bandas básicas
-        hl2 = (high + low) / 2
-        upper_band = hl2 + (multiplier * atr)
-        lower_band = hl2 - (multiplier * atr)
-        
-        # Lógica simples do Supertrend
-        supertrend = []
-        direction = []
-        
-        for i in range(len(df)):
-            if i == 0:
-                supertrend.append(lower_band.iloc[i])
-                direction.append(1)
-            else:
-                if close.iloc[i] > supertrend[i-1]:
-                    direction.append(1)
-                    supertrend.append(lower_band.iloc[i])
-                else:
-                    direction.append(-1) 
-                    supertrend.append(upper_band.iloc[i])
-        
-        df['supertrend'] = [d > 0 for d in direction]
+            atr = AverageTrueRange(high, low, close, period).average_true_range()
+            hl2 = (high + low) / 2
+            upper_band = hl2 + (multiplier * atr)
+            lower_band = hl2 - (multiplier * atr)
+            
+            # Supertrend simplificado
+            df['supertrend'] = close > lower_band
+            
         return df
         
     except Exception as e:
         logging.warning(f"Erro no Supertrend: {e}")
-        df['supertrend'] = [True] * len(df)  # Fallback
+        df['supertrend'] = [True] * len(df)
         return df
 
 def detectar_candle_forte(df):
@@ -617,116 +258,270 @@ def detectar_candle_forte(df):
     sombra_sup = candle['high'] - max(candle['close'], candle['open'])
     sombra_inf = min(candle['close'], candle['open']) - candle['low']
     
-    return corpo > (sombra_sup * 1.5) and corpo > (sombra_inf * 1.5)
+    return corpo > sombra_sup and corpo > sombra_inf
 
 def detectar_engolfo_alta(df):
     """Detecta padrão de engolfo de alta"""
     if len(df) < 2:
         return False
     
-    atual = df.iloc[-1]
-    anterior = df.iloc[-2]
+    c1 = df.iloc[-2]  # Anterior
+    c2 = df.iloc[-1]  # Atual
     
-    return (atual['close'] > atual['open'] and  # Atual de alta
-            anterior['close'] < anterior['open'] and  # Anterior de baixa  
-            atual['open'] < anterior['close'] and  # Abertura atual < fechamento anterior
-            atual['close'] > anterior['open'])  # Fechamento atual > abertura anterior
+    return (c2['close'] > c2['open'] and     # Atual de alta
+            c1['close'] < c1['open'] and     # Anterior de baixa
+            c2['open'] < c1['close'] and     # Abertura atual < fechamento anterior
+            c2['close'] > c1['open'])        # Fechamento atual > abertura anterior
+
+def detectar_martelo(df):
+    """Detecta padrão de martelo"""
+    if len(df) < 1:
+        return False
+        
+    c = df.iloc[-1]
+    corpo = abs(c['close'] - c['open'])
+    sombra_inf = min(c['close'], c['open']) - c['low']
+    sombra_sup = c['high'] - max(c['close'], c['open'])
+    
+    return sombra_inf > corpo * 2 and sombra_sup < corpo
 
 # ===============================
-# === SETUPS DE TRADING
+# === SETUPS DE TRADING (Baseados no Script Original)
 # ===============================
 
-def verificar_setup_github_conservador(r, df):
-    """Setup conservador otimizado para GitHub Actions"""
+def verificar_setup_rigoroso(r, df):
+    """Setup 1 - Rigoroso (baseado no script original)"""
     condicoes = [
-        r['rsi'] < 45,
-        r['ema9'] > r['ema21'],
+        r['rsi'] < 40,
+        df['ema9'].iloc[-2] < df['ema21'].iloc[-2] and r['ema9'] > r['ema21'],  # Cruzamento
         r['macd'] > r['macd_signal'],
-        r['adx'] > 18,
-        df['volume'].iloc[-1] > df['volume'].mean() * 1.2,
-        r['close'] > r['ema200'],
+        r['adx'] > 20,
+        df['volume'].iloc[-1] > df['volume'].mean() * 1.5,
         df['supertrend'].iloc[-1] == True
     ]
     
-    if sum(condicoes) >= 5:
+    if all(condicoes):
         return {
-            'setup': '🛡️ SETUP CONSERVADOR',
-            'prioridade': '🟢 ALTA QUALIDADE',
-            'emoji': '🛡️',
-            'id': 'conservador_gh'
+            'setup': '🎯 SETUP RIGOROSO', 
+            'prioridade': '🟠 PRIORIDADE ALTA', 
+            'emoji': '🎯',
+            'id': 'setup_rigoroso'
         }
     return None
 
-def verificar_setup_github_momentum(r, df):
-    """Setup de momentum para capturas rápidas"""
+def verificar_setup_alta_confluencia(r, df):
+    """Setup 5 - Alta Confluência (baseado no script original)"""
     condicoes = [
-        r['rsi'] > 35 and r['rsi'] < 65,  # RSI em zona neutra
+        r['rsi'] < 40,
+        df['ema9'].iloc[-2] < df['ema21'].iloc[-2] and r['ema9'] > r['ema21'],
+        r['macd'] > r['macd_signal'],
+        r['atr'] > df['atr'].mean(),
+        r['obv'] > df['obv'].mean(),
+        r['adx'] > 20,
+        r['close'] > r['ema200'],
+        df['volume'].iloc[-1] > df['volume'].mean(),
+        df['supertrend'].iloc[-1],
+        detectar_candle_forte(df)
+    ]
+    
+    if sum(condicoes) >= 6:
+        return {
+            'setup': '🔥 SETUP ALTA CONFLUÊNCIA',
+            'prioridade': '🟥 PRIORIDADE MÁXIMA',
+            'emoji': '🔥',
+            'id': 'setup_alta_confluencia'
+        }
+    return None
+
+def verificar_setup_rompimento(r, df):
+    """Setup 6 - Rompimento (baseado no script original)"""
+    if len(df) < 10:
+        return None
+        
+    resistencia = df['high'].iloc[-10:-1].max()
+    rompimento = r['close'] > resistencia
+    volume_ok = df['volume'].iloc[-1] > df['volume'].mean()
+    rsi_ok = r['rsi'] > 55 and df['rsi'].iloc[-1] > df['rsi'].iloc[-2]
+    
+    if rompimento and volume_ok and rsi_ok and df['supertrend'].iloc[-1]:
+        return {
+            'setup': '🚀 SETUP ROMPIMENTO',
+            'prioridade': '🟩 ALTA OPORTUNIDADE',
+            'emoji': '🚀',
+            'id': 'setup_rompimento'
+        }
+    return None
+
+def verificar_setup_reversao_tecnica(r, df):
+    """Setup 4 - Reversão Técnica (baseado no script original)"""
+    if len(df) < 3:
+        return None
+        
+    candle_reversao = detectar_martelo(df) or detectar_engolfo_alta(df)
+    rsi_subindo = df['rsi'].iloc[-1] > df['rsi'].iloc[-2]
+    
+    condicoes = [
+        r['obv'] > df['obv'].mean(),
+        df['close'].iloc[-2] > df['open'].iloc[-2],  # Candle anterior de alta
+        df['close'].iloc[-1] > df['close'].iloc[-2],  # Candle atual em alta
+        candle_reversao,
+        rsi_subindo
+    ]
+    
+    if all(condicoes):
+        return {
+            'setup': '🔁 SETUP REVERSÃO TÉCNICA',
+            'prioridade': '🟣 OPORTUNIDADE DE REVERSÃO',
+            'emoji': '🔁',
+            'id': 'setup_reversao_tecnica'
+        }
+    return None
+
+def verificar_setup_intermediario(r, df):
+    """Setup 2 - Intermediário (baseado no script original)"""
+    condicoes = [
+        r['rsi'] < 50,
         r['ema9'] > r['ema21'],
         r['macd'] > r['macd_signal'],
-        df['volume'].iloc[-1] > df['volume'].mean() * 1.5,  # Volume forte
-        detectar_candle_forte(df) or detectar_engolfo_alta(df),
-        r['adx'] > 15
+        r['adx'] > 15,
+        df['volume'].iloc[-1] > df['volume'].mean()
     ]
     
-    if sum(condicoes) >= 4:
+    if all(condicoes):
         return {
-            'setup': '⚡ SETUP MOMENTUM',
-            'prioridade': '🟡 OPORTUNIDADE RÁPIDA', 
-            'emoji': '⚡',
-            'id': 'momentum_gh'
+            'setup': '⚙️ SETUP INTERMEDIÁRIO',
+            'prioridade': '🟡 PRIORIDADE MÉDIA-ALTA',
+            'emoji': '⚙️',
+            'id': 'setup_intermediario'
         }
     return None
 
-def verificar_setup_github_reversao(r, df):
-    """Setup de reversão em correções"""
-    if len(df) < 5:
-        return None
-    
-    # Verificar correção recente
-    preco_max_recente = df['close'].iloc[-5:].max()
-    correcao_detectada = r['close'] < preco_max_recente * 0.97
-    
+def verificar_setup_leve(r, df):
+    """Setup 3 - Leve (baseado no script original)"""
     condicoes = [
-        r['rsi'] < 35,  # Sobrevenda
-        correcao_detectada,  # Houve correção
-        detectar_engolfo_alta(df),  # Padrão de reversão
-        r['obv'] > df['obv'].iloc[-10:].mean(),  # OBV ainda positivo
-        df['volume'].iloc[-1] > df['volume'].mean() * 1.3
+        r['ema9'] > r['ema21'],
+        r['adx'] > 15,
+        df['volume'].iloc[-1] > df['volume'].mean()
     ]
     
-    if sum(condicoes) >= 3:
+    if sum(condicoes) >= 2:
         return {
-            'setup': '🔄 SETUP REVERSÃO',
-            'prioridade': '🟠 CONTRA-TENDÊNCIA',
-            'emoji': '🔄', 
-            'id': 'reversao_gh'
+            'setup': '🔹 SETUP LEVE',
+            'prioridade': '🔵 PRIORIDADE MÉDIA',
+            'emoji': '🔹',
+            'id': 'setup_leve'
         }
     return None
-    def calcular_score_setup(r, df, setup_id):
-    """Score de qualidade do setup (0-10)"""
+
+# ===============================
+# === SCORE E ANÁLISE
+# ===============================
+
+def calcular_score_setup(r, df, setup_id):
+    """Score baseado no script original"""
     score = 0
-    total = 10  # Score máximo
+    total = 0
+    criterios = []
     
-    # Critérios básicos (1 ponto cada)
-    if r['rsi'] > 25 and r['rsi'] < 70: score += 1
-    if r['ema9'] > r['ema21']: score += 1
-    if r['macd'] > r['macd_signal']: score += 1
-    if df['volume'].iloc[-1] > df['volume'].mean(): score += 1
+    def conta(condicao, descricao, peso=1):
+        nonlocal score, total
+        total += peso
+        if condicao:
+            score += peso
+            criterios.append(f"✅ {descricao}")
+        else:
+            criterios.append(f"❌ {descricao}")
     
-    # Critérios importantes (1.5 pontos cada)
-    if r['adx'] > 20: score += 1.5
-    if r['close'] > r['ema200']: score += 1.5
-    if df['supertrend'].iloc[-1]: score += 1.5
+    # Critérios específicos por setup (baseado no script original)
+    if setup_id in ['setup_rigoroso', 'setup_alta_confluencia']:
+        conta(r['rsi'] < 40, "RSI < 40")
+        conta(df['ema9'].iloc[-2] < df['ema21'].iloc[-2] and r['ema9'] > r['ema21'], "Cruzamento EMA9 > EMA21")
+        conta(r['macd'] > r['macd_signal'], "MACD > sinal")
+        conta(r['adx'] > 20, "ADX > 20")
+        conta(df['volume'].iloc[-1] > df['volume'].mean() * 1.5, "Volume acima da média")
+        conta(df['supertrend'].iloc[-1], "Supertrend ativo")
+        conta(r['atr'] > df['atr'].mean(), "ATR > média")
+        conta(r['obv'] > df['obv'].mean(), "OBV > média")
+        conta(r['close'] > r['ema200'], "Preço > EMA200")
+        conta(detectar_candle_forte(df), "Candle forte detectado")
+        
+    elif setup_id == 'setup_intermediario':
+        conta(r['rsi'] < 50, "RSI < 50")
+        conta(r['ema9'] > r['ema21'], "EMA9 > EMA21")
+        conta(r['macd'] > r['macd_signal'], "MACD > sinal")
+        conta(r['adx'] > 15, "ADX > 15")
+        conta(df['volume'].iloc[-1] > df['volume'].mean(), "Volume acima da média")
+        
+    elif setup_id == 'setup_leve':
+        conta(r['ema9'] > r['ema21'], "EMA9 > EMA21")
+        conta(r['adx'] > 15, "ADX > 15")
+        conta(df['volume'].iloc[-1] > df['volume'].mean(), "Volume acima da média")
+        
+    elif setup_id == 'setup_reversao_tecnica':
+        conta(r['obv'] > df['obv'].mean(), "OBV > média")
+        conta(df['close'].iloc[-2] > df['open'].iloc[-2], "Candle anterior de alta")
+        conta(df['close'].iloc[-1] > df['close'].iloc[-2], "Candle atual em alta")
+        conta(detectar_martelo(df) or detectar_engolfo_alta(df), "Padrão de reversão")
+        conta(df['rsi'].iloc[-1] > df['rsi'].iloc[-2], "RSI em alta")
+        
+    elif setup_id == 'setup_rompimento':
+        resistencia = df['high'].iloc[-10:-1].max()
+        conta(r['close'] > resistencia, "Rompimento da resistência")
+        conta(df['volume'].iloc[-1] > df['volume'].mean(), "Volume acima da média")
+        conta(r['rsi'] > 55 and df['rsi'].iloc[-1] > df['rsi'].iloc[-2], "RSI em alta (>55)")
+        conta(df['supertrend'].iloc[-1], "Supertrend ativo")
     
-    # Critérios especiais (2 pontos cada)
-    if detectar_candle_forte(df): score += 2
-    if df['volume'].iloc[-1] > df['volume'].mean() * 1.5: score += 2
+    if total == 0:
+        return 0.0, []
     
-    return round(score, 1)
+    score_final = round((score / total) * 10, 1)
+    return score_final, criterios
+
+def gerar_explicacao_score(score):
+    """Explicação educativa baseada no script original"""
+    if score >= 9:
+        return (
+            "🔎 *Para Iniciantes:*\n"
+            "Este sinal teve **confluência máxima** entre indicadores:\n"
+            "• RSI saudável\n"
+            "• ADX forte (> 20)\n"
+            "• Volume bem acima da média\n"
+            "• Supertrend em tendência de alta\n\n"
+            "📌 Isso indica um momento técnico **muito favorável** para entrada."
+        )
+    elif score >= 6.5:
+        return (
+            "🔎 *Para Iniciantes:*\n"
+            "Este sinal apresenta **boa base técnica**, mas exige mais cautela:\n"
+            "• Alguns indicadores estão neutros ou moderados\n"
+            "• Volume não muito acima da média\n\n"
+            "📌 Pode indicar oportunidade, mas atenção ao contexto é recomendada."
+        )
+    else:
+        return (
+            "🔎 *Para Iniciantes:*\n"
+            "Este sinal possui **baixa força técnica**:\n"
+            "• Indicadores fracos ou divergentes\n"
+            "• Volume abaixo da média\n\n"
+            "📌 Não recomendado operar com base nesse sinal isoladamente."
+        )
 
 # ===============================
 # === COMUNICAÇÃO TELEGRAM
 # ===============================
+
+def pode_enviar_alerta(par, setup):
+    """Controla intervalo entre alertas do mesmo par/setup"""
+    agora = datetime.datetime.utcnow()
+    chave = f"{par}_{setup}"
+    
+    if chave in alertas_enviados:
+        delta = (agora - alertas_enviados[chave]).total_seconds()
+        if delta < TEMPO_REENVIO:
+            return False
+    
+    alertas_enviados[chave] = agora
+    return True
 
 def enviar_telegram(mensagem):
     """Envia mensagem para o Telegram"""
@@ -753,68 +548,85 @@ def enviar_telegram(mensagem):
         logging.error(f"Erro ao enviar Telegram: {e}")
         return False
 
-def enviar_alerta_github(par, r, setup_info, df):
-    """Envia alerta otimizado para GitHub Actions"""
+def enviar_alerta_completo(par, r, setup_info, df):
+    """Envia alerta completo baseado no script original"""
     preco = r['close']
     atr = r['atr']
     
-    # Cálculo de alvos adaptativos
+    # Cálculo de alvos adaptativos (baseado no script original)
     if par == 'BTC/USDT':
-        stop = round(preco - (atr * 1.2), 2)
-        alvo = round(preco + (atr * 2.5), 2)
+        stop = round(preco - (atr * 1.2), 2)   # Mais conservador para BTC
+        alvo = round(preco + (atr * 2.5), 2)   # Alvo moderado
     else:  # ETH/USDT
-        stop = round(preco - (atr * 1.5), 2) 
-        alvo = round(preco + (atr * 3.0), 2)
+        stop = round(preco - (atr * 1.5), 2)   # Stop normal para ETH
+        alvo = round(preco + (atr * 3.0), 2)   # Alvo mais agressivo
     
     # Score do setup
-    score = calcular_score_setup(r, df, setup_info.get('id', ''))
+    score, criterios = calcular_score_setup(r, df, setup_info.get('id', ''))
     
-    # Timestamp
+    # Timestamp em Brasília
     agora_utc = datetime.datetime.utcnow()
-    agora_local = agora_utc - datetime.timedelta(hours=3)  # Brasília
-    timestamp = agora_local.strftime('%d/%m %H:%M')
+    agora_local = agora_utc - datetime.timedelta(hours=3)
+    timestamp_br = agora_local.strftime('%d/%m/%Y %H:%M (Brasília)')
+    
+    # Link TradingView
+    symbol_clean = par.replace("/", "")
+    link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_clean}"
     
     # Dados fundamentais
     resumo_mercado = obter_dados_fundamentais()
     
-    # Construir mensagem
+    # Construir mensagem (baseada no formato original)
     mensagem = (
         f"{setup_info['emoji']} *{setup_info['setup']}*\n"
         f"{setup_info['prioridade']}\n\n"
-        f"📊 *Par:* `{par}`\n"
-        f"💰 *Preço:* `${preco:,.2f}`\n"
-        f"🎯 *Alvo:* `${alvo:,.2f}`\n"
-        f"🛑 *Stop:* `${stop:,.2f}`\n"
-        f"⭐ *Score:* `{score}/10`\n\n"
-        f"📈 *Indicadores Técnicos:*\n"
-        f"• RSI: {r['rsi']:.1f}\n"
-        f"• MACD: {'✅' if r['macd'] > r['macd_signal'] else '❌'}\n"
-        f"• ADX: {r['adx']:.1f}\n"
-        f"• Volume: {r['volume']:,.0f}\n"
-        f"• ATR: ${r['atr']:.2f}\n\n"
-        f"🕒 *GitHub Actions:* {timestamp}\n"
-        f"🤖 *Executado a cada 15min*\n\n"
-        f"{resumo_mercado}\n\n"
-        f"📋 *Análise:*\n"
-        f"• Tendência: {'Alta' if r['ema9'] > r['ema21'] else 'Baixa'}\n"
-        f"• Força: {'💪' if r['adx'] > 20 else '👤'}\n"
-        f"• Momentum: {'🚀' if df['volume'].iloc[-1] > df['volume'].mean() * 1.2 else '😴'}\n"
-        f"• Supertrend: {'🟢' if df['supertrend'].iloc[-1] else '🔴'}"
+        f"📊 Par: `{par}`\n"
+        f"💰 Preço: `{preco:,.2f}`\n"
+        f"🎯 Alvo: `{alvo:,.2f}` ({'2.5x' if par == 'BTC/USDT' else '3.0x'} ATR)\n"
+        f"🛑 Stop: `{stop:,.2f}` ({'1.2x' if par == 'BTC/USDT' else '1.5x'} ATR)\n\n"
+        f"📊 *Força do Sinal:* {score} / 10\n"
+        f"📌 *Componentes do Score:*\n"
     )
     
-    # Adicionar explicação para iniciantes
-    if score >= 7.5:
-        mensagem += f"\n\n💡 *Setup de alta qualidade* com múltiplos indicadores alinhados!"
-    elif score >= 6:
-        mensagem += f"\n\n⚖️ *Setup moderado* - requer mais confirmação antes de operar."
-    else:
-        mensagem += f"\n\n⚠️ *Setup fraco* - aguardar melhores oportunidades."
+    # Adicionar critérios (máximo 6 para não sobrecarregar)
+    for criterio in criterios[:6]:
+        mensagem += f"{criterio}\n"
+    
+    if len(criterios) > 6:
+        mensagem += f"... e mais {len(criterios)-6} critérios\n"
+    
+    mensagem += (
+        f"\n📈 Indicadores:\n"
+        f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
+        f"• ATR: {r['atr']:.4f} | OBV: {r['obv']:,.0f}\n"
+        f"• Volume: {r['volume']:,.0f}\n"
+        f"🕘 {timestamp_br}\n"
+        f"📉 [Ver gráfico no TradingView]({link_tv})\n\n"
+        f"{resumo_mercado}\n\n"
+    )
+    
+    # Explicação educativa
+    explicacao = gerar_explicacao_score(score)
+    mensagem += explicacao
     
     # Enviar se permitido
     if pode_enviar_alerta(par, setup_info['setup']):
         if enviar_telegram(mensagem):
             logging.info(f"✅ Alerta enviado: {par} - {setup_info['setup']} (score: {score})")
             print(f"✅ ALERTA: {par} - {setup_info['setup']} (score: {score})")
+            
+            # Registrar sinal para monitoramento
+            try:
+                registrar_sinal_monitorado(
+                    par=par,
+                    setup_id=setup_info.get('id', 'desconhecido'),
+                    preco_entrada=preco,
+                    alvo=alvo,
+                    stop=stop
+                )
+            except Exception as e:
+                logging.error(f"Erro ao registrar sinal: {e}")
+                
             return True
         else:
             logging.error(f"❌ Falha ao enviar: {par} - {setup_info['setup']}")
@@ -827,8 +639,8 @@ def enviar_alerta_github(par, r, setup_info, df):
 # === ANÁLISE PRINCIPAL
 # ===============================
 
-def analisar_par_github(exchange, par):
-    """Análise otimizada para GitHub Actions"""
+def analisar_par(exchange, par):
+    """Análise principal de um par - baseada no script original"""
     try:
         print(f"🔍 Analisando {par}...")
         
@@ -870,17 +682,20 @@ def analisar_par_github(exchange, par):
         # Dados da linha atual
         r = df.iloc[-1]
         
-        # Verificar setups em ordem de prioridade
+        # Verificar setups em ordem de prioridade (baseado no script original)
         setups = [
-            verificar_setup_github_conservador,
-            verificar_setup_github_momentum, 
-            verificar_setup_github_reversao
+            verificar_setup_alta_confluencia,  # Prioridade máxima
+            verificar_setup_rompimento,       # Alta oportunidade
+            verificar_setup_rigoroso,         # Prioridade alta
+            verificar_setup_intermediario,    # Média-alta
+            verificar_setup_reversao_tecnica, # Oportunidade reversão
+            verificar_setup_leve             # Última opção
         ]
         
         for verificar_setup in setups:
             setup_info = verificar_setup(r, df)
             if setup_info:
-                return enviar_alerta_github(par, r, setup_info, df)
+                return enviar_alerta_completo(par, r, setup_info, df)
         
         print(f"   💭 {par}: Nenhum setup detectado")
         return None
@@ -894,10 +709,10 @@ def analisar_par_github(exchange, par):
 # === FUNÇÃO PRINCIPAL
 # ===============================
 
-def executar_scanner_github():
+def executar_scanner():
     """Função principal do scanner GitHub Actions"""
     try:
-        print("🚀 INICIANDO SCANNER GITHUB ACTIONS")
+        print("🚀 INICIANDO SCANNER GITHUB ACTIONS - ETH/BTC FOCUS")
         print(f"⏰ Executado em: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print(f"📊 Pares: {', '.join(PARES_ALVOS)}")
         print(f"📈 Timeframe: {timeframe}")
@@ -912,34 +727,48 @@ def executar_scanner_github():
                 print(f"❌ Par {par} não encontrado na OKX")
                 continue
         
+        # Verificar sinais em aberto primeiro
+        try:
+            print("🔍 Verificando sinais em aberto...")
+            sinais_atualizados = verificar_sinais_monitorados(exchange)
+            if sinais_atualizados:
+                print(f"📊 {len(sinais_atualizados)} sinais foram atualizados")
+        except Exception as e:
+            logging.error(f"Erro ao verificar sinais: {e}")
+        
         # Analisar cada par
-        alertas_enviados = 0
+        alertas_enviados_count = 0
         for par in PARES_ALVOS:
             if par in exchange.markets:
-                resultado = analisar_par_github(exchange, par)
+                resultado = analisar_par(exchange, par)
                 if resultado:
-                    alertas_enviados += 1
+                    alertas_enviados_count += 1
+                time.sleep(2)  # Evitar rate limiting
         
         # Resumo final
         print(f"\n✅ SCANNER FINALIZADO")
-        print(f"📨 Alertas enviados: {alertas_enviados}")
-        print(f"🕒 Próxima execução: em 15 minutos")
+        print(f"📨 Alertas enviados: {alertas_enviados_count}")
+        print(f"🕒 Próxima execução: em 10 minutos")
         
-        # Enviar resumo se não houve alertas
-        if alertas_enviados == 0:
-            agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
-            mensagem_resumo = (
-                f"🤖 *Scanner GitHub Actions*\n\n"
-                f"⏰ Executado às {agora}\n"
-                f"📊 Pares analisados: {', '.join(PARES_ALVOS)}\n"
-                f"📈 Status: Mercado sem sinais claros\n"
-                f"🔄 Próxima verificação: 15 minutos\n\n"
-                f"💤 *Aguardando oportunidades...*"
-            )
-            
-            # Enviar resumo apenas uma vez por hora (para não spam)
+        # Enviar resumo de status (apenas a cada 4 horas para evitar spam)
+        if alertas_enviados_count == 0:
             hora_atual = datetime.datetime.utcnow().hour
             if hora_atual % 4 == 0:  # A cada 4 horas
+                agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
+                
+                # Verificar quantos sinais estão em aberto
+                sinais = carregar_sinais_monitorados()
+                sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
+                
+                mensagem_resumo = (
+                    f"🤖 *Scanner GitHub Actions*\n\n"
+                    f"⏰ Executado às {agora}\n"
+                    f"📊 Pares analisados: {', '.join(PARES_ALVOS)}\n"
+                    f"📈 Status: Mercado sem novos sinais\n"
+                    f"📝 Sinais em aberto: {sinais_abertos}\n"
+                    f"🔄 Próxima verificação: 10 minutos\n\n"
+                    f"💤 *Aguardando oportunidades...*"
+                )
                 enviar_telegram(mensagem_resumo)
         
         return True
@@ -966,7 +795,12 @@ def executar_scanner_github():
 
 if __name__ == "__main__":
     # Executar scanner
-    sucesso = executar_scanner_github()
+    print("🎯 SCANNER ETH/BTC - GitHub Actions")
+    print("📋 Baseado no script original com 6 setups")
+    print("🔍 Focado exclusivamente em BTC/USDT e ETH/USDT")
+    print("⚡ Execução otimizada para GitHub Actions\n")
+    
+    sucesso = executar_scanner()
     
     if sucesso:
         print("🎉 Scanner executado com sucesso!")
