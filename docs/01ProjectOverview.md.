@@ -1,0 +1,42 @@
+# 01. Project Overview
+
+## 1. Objetivo do Projeto
+Construir uma plataforma de alertas e backtest para traders de criptomoedas que combine:
+- Scanner de sinais avançado  
+- Score dinâmico de confiabilidade  
+- Validação histórica (backtest)  
+- Contexto macroeconômico e de sentimento  
+- Integração com interfaces (Telegram, dashboard, API)  
+
+## 2. Público-alvo
+- Traders individuais de criptomoedas  
+- Small funds e desks proprietárias  
+- Desenvolvedores de sistemas de trading  
+
+## 3. Principais Módulos
+1. **Coleta de Dados**  
+   - CCXT para spot e futuros  
+2. **Indicadores & Padrões**  
+   - RSI, MACD, ADX, ATR, Bollinger Bands  
+   - Fibonacci, VWAP, Patterns (bandeira, cunha, ABC, OCO…)  
+3. **Geração de Sinais**  
+   - Score dinâmico; filtros de volume, volatilidade e confluência  
+4. **Backtesting & Validação**  
+   - Pipeline vectorbt/backtrader  
+   - Testes walk-forward e bootstrap  
+5. **Contexto Externo**  
+   - Eventos macro (FOMC, CPI, Payroll)  
+   - Sentimento (Fear & Greed, AAII, Twitter)  
+   - Regime Detector e Fator de Risco Global  
+6. **Alertas & Interface**  
+   - Bot Telegram avançado  
+   - Dashboard Streamlit/Dash  
+   - API REST (FastAPI)  
+7. **Infraestrutura & Operações**  
+   - CI/CD (GitHub Actions), container Docker, alta disponibilidade, compliance  
+
+## 4. Metodologia de Evolução
+1. Uso pessoal em ambiente controlado  
+2. Registro de resultados e análise de performance  
+3. Reinvestimento dos ganhos em melhorias  
+4. Escalonamento progressivo para múltiplos usuários
