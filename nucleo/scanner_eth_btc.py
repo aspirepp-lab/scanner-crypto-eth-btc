@@ -1712,7 +1712,7 @@ if __name__ == "__main__":
         exit(1)
                     'alta': '🔥',
                     'normal': '🟡',
-                    'baixa': '😴',
+                    'baixa': '😴'
                 }.get(dados['volatilidade'], '❓')
                 
                 mensagem += (
