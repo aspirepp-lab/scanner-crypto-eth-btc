@@ -1,5 +1,5 @@
-# nucleo/scanner_eth_btc.py - INTEGRAÇÃO ARSENAL V2.0
-# PRESERVA: 100% do código atual (1400+ linhas) + ADICIONA: Arsenal institucional
+# nucleo/scanner_eth_btc.py - INTEGRAÇÃO ARSENAL V2.1 COM DIAGNÓSTICO AUTOMÁTICO
+# PRESERVA: 100% do código atual (1661 linhas) + ADICIONA: Diagnóstico transparente
 
 import ccxt
 import pandas as pd
@@ -37,17 +37,69 @@ except ImportError:
     print("⚠️ pandas_ta não disponível, usando cálculo manual")
     pta = None
 
-# NOVO: TENTATIVA DE IMPORTAR ARSENAL INSTITUCIONAL
+# NOVO: DIAGNÓSTICO DETALHADO DO ARSENAL INSTITUCIONAL
+VWAP_DISPONIVEL = False
+VWAP_ERRO = ""
+MACRO_DISPONIVEL = False
+MACRO_ERRO = ""
+EXPLICADOR_DISPONIVEL = False
+EXPLICADOR_ERRO = ""
+
+print("🔍 VERIFICANDO ARSENAL INSTITUCIONAL...")
+
+# VWAP Institucional
 try:
     from institucional.analisador_vwap import AnalisadorVWAPInstitucional
-    from institucional.contexto_macro import AnalisadorContextoMacro
-    from interface.explicador_sinais import ExplicadorSinais
-    ARSENAL_DISPONIVEL = True
-    print("✅ Arsenal institucional carregado com sucesso")
+    VWAP_DISPONIVEL = True
+    print("✅ VWAP Institucional: FUNCIONANDO")
 except ImportError as e:
-    print(f"⚠️ Arsenal não disponível: {e}")
-    print("🔄 Continuando com sistema base...")
-    ARSENAL_DISPONIVEL = False
+    VWAP_ERRO = str(e)
+    print(f"❌ VWAP Institucional: ERRO - {e}")
+except Exception as e:
+    VWAP_ERRO = f"Erro inesperado: {e}"
+    print(f"❌ VWAP Institucional: ERRO CRÍTICO - {e}")
+
+# Contexto Macro
+try:
+    from institucional.contexto_macro import AnalisadorContextoMacro
+    MACRO_DISPONIVEL = True
+    print("✅ Contexto Macro: FUNCIONANDO")
+except ImportError as e:
+    MACRO_ERRO = str(e)
+    print(f"❌ Contexto Macro: ERRO - {e}")
+except Exception as e:
+    MACRO_ERRO = f"Erro inesperado: {e}"
+    print(f"❌ Contexto Macro: ERRO CRÍTICO - {e}")
+
+# Explicador Sinais
+try:
+    from interface.explicador_sinais import ExplicadorSinais
+    EXPLICADOR_DISPONIVEL = True
+    print("✅ Explicador Sinais: FUNCIONANDO")
+except ImportError as e:
+    EXPLICADOR_ERRO = str(e)
+    print(f"❌ Explicador Sinais: ERRO - {e}")
+except Exception as e:
+    EXPLICADOR_ERRO = f"Erro inesperado: {e}"
+    print(f"❌ Explicador Sinais: ERRO CRÍTICO - {e}")
+
+# STATUS GERAL DO ARSENAL
+ARSENAL_DISPONIVEL = VWAP_DISPONIVEL and MACRO_DISPONIVEL and EXPLICADOR_DISPONIVEL
+
+if ARSENAL_DISPONIVEL:
+    print("🏦 ARSENAL INSTITUCIONAL: COMPLETO E ATIVO")
+    try:
+        analisador_vwap = AnalisadorVWAPInstitucional()
+        analisador_macro = AnalisadorContextoMacro()
+        explicador_sinais = ExplicadorSinais()
+        print("🏦 Analisadores institucionais inicializados com sucesso")
+    except Exception as e:
+        print(f"⚠️ Erro ao inicializar analisadores: {e}")
+        ARSENAL_DISPONIVEL = False
+else:
+    componentes_ok = sum([VWAP_DISPONIVEL, MACRO_DISPONIVEL, EXPLICADOR_DISPONIVEL])
+    print(f"⚠️ ARSENAL INSTITUCIONAL: PARCIAL ({componentes_ok}/3 componentes)")
+    print("📊 Sistema continuará em MODO BASE")
 
 # ===============================
 # === CONFIGURAÇÕES AVANÇADAS
@@ -80,16 +132,94 @@ logging.basicConfig(
 # Controle de alertas
 alertas_enviados = {}
 
-# NOVO: INICIALIZAR ARSENAL (SE DISPONÍVEL)
-if ARSENAL_DISPONIVEL:
+# ===============================
+# === DIAGNÓSTICO DO SISTEMA (NOVO)
+# ===============================
+
+def enviar_status_sistema():
+    """Envia status completo do sistema no início da execução"""
     try:
-        analisador_vwap = AnalisadorVWAPInstitucional()
-        analisador_macro = AnalisadorContextoMacro()
-        explicador_sinais = ExplicadorSinais()
-        print("✅ Analisadores institucionais inicializados")
+        agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
+        
+        if ARSENAL_DISPONIVEL:
+            status_titulo = "🏦 SISTEMA ENHANCED ATIVO"
+            status_detalhes = [
+                "✅ VWAP Institucional: FUNCIONANDO",
+                "✅ Contexto Macro: FUNCIONANDO", 
+                "✅ Explicador Sinais: FUNCIONANDO",
+                "",
+                "🎯 Funcionalidades completas disponíveis",
+                "🔍 Análise institucional ativa"
+            ]
+        else:
+            status_titulo = "⚠️ SISTEMA EM MODO BASE"
+            status_detalhes = []
+            
+            # Status detalhado de cada componente
+            if not VWAP_DISPONIVEL:
+                status_detalhes.append(f"❌ VWAP Institucional: {VWAP_ERRO}")
+            else:
+                status_detalhes.append("✅ VWAP Institucional: OK")
+                
+            if not MACRO_DISPONIVEL:
+                status_detalhes.append(f"❌ Contexto Macro: {MACRO_ERRO}")
+            else:
+                status_detalhes.append("✅ Contexto Macro: OK")
+                
+            if not EXPLICADOR_DISPONIVEL:
+                status_detalhes.append(f"❌ Explicador Sinais: {EXPLICADOR_ERRO}")
+            else:
+                status_detalhes.append("✅ Explicador Sinais: OK")
+            
+            status_detalhes.extend([
+                "",
+                "🚨 ATENÇÃO: Funcionalidades reduzidas",
+                "📊 Sistema base operacional",
+                "🔧 Verificar logs para diagnóstico"
+            ])
+        
+        mensagem = f"""{status_titulo}
+
+{chr(10).join(status_detalhes)}
+
+⏰ Status verificado às {agora}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━"""
+        
+        if enviar_telegram(mensagem):
+            print(f"✅ Status do sistema enviado: {'ENHANCED' if ARSENAL_DISPONIVEL else 'BASE ONLY'}")
+        else:
+            print("❌ Falha no envio do status do sistema")
+            
     except Exception as e:
-        print(f"⚠️ Erro ao inicializar arsenal: {e}")
-        ARSENAL_DISPONIVEL = False
+        print(f"Erro ao enviar status: {e}")
+
+def diagnosticar_arsenal():
+    """Diagnóstica componentes do arsenal individualmente"""
+    try:
+        diagnostico = {
+            'arsenal_completo': ARSENAL_DISPONIVEL,
+            'componentes': {
+                'vwap': {'disponivel': VWAP_DISPONIVEL, 'erro': VWAP_ERRO},
+                'macro': {'disponivel': MACRO_DISPONIVEL, 'erro': MACRO_ERRO},
+                'explicador': {'disponivel': EXPLICADOR_DISPONIVEL, 'erro': EXPLICADOR_ERRO}
+            }
+        }
+        
+        componentes_ok = sum([VWAP_DISPONIVEL, MACRO_DISPONIVEL, EXPLICADOR_DISPONIVEL])
+        
+        print(f"📊 DIAGNÓSTICO ARSENAL: {componentes_ok}/3 componentes funcionando")
+        
+        for nome, info in diagnostico['componentes'].items():
+            if info['disponivel']:
+                print(f"✅ {nome.upper()}: OK")
+            else:
+                print(f"❌ {nome.upper()}: {info['erro']}")
+        
+        return diagnostico
+        
+    except Exception as e:
+        print(f"Erro no diagnóstico: {e}")
+        return {'erro': str(e)}
 
 # ===============================
 # === VALIDAÇÃO E LIMPEZA DE DADOS
@@ -1006,9 +1136,12 @@ def enviar_telegram(mensagem):
     except:
         return False
 
-# NOVO: FUNÇÃO ENHANCED DE ALERTA COM ARSENAL
+# ===============================
+# === ALERTAS COM DIAGNÓSTICO (MODIFICADO)
+# ===============================
+
 def enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_info):
-    """Alerta com análise de múltiplos timeframes + arsenal institucional"""
+    """Alerta com análise de múltiplos timeframes + arsenal institucional + DIAGNÓSTICO"""
     try:
         # Dados do timeframe principal (1h)
         tf_principal = analise_tf.get('1h', {})
@@ -1026,17 +1159,27 @@ def enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_info):
         if not pode_enviar_alerta(par, setup_info.get('id', '')):
             return False
         
-        # CONSTRUIR MENSAGEM BASE (preservar seu formato)
-        mensagem = f"""{setup_info['emoji']} SINAL ENHANCED - {par} ${preco:,.2f}
+        # INDICADOR DE STATUS OBRIGATÓRIO
+        if ARSENAL_DISPONIVEL:
+            status_indicator = "🏦 ENHANCED"
+            status_detail = "Sistema completo ativo"
+        else:
+            status_indicator = "⚠️ BASE ONLY"
+            componentes_ok = sum([VWAP_DISPONIVEL, MACRO_DISPONIVEL, EXPLICADOR_DISPONIVEL])
+            status_detail = f"Arsenal parcial ({componentes_ok}/3)"
+        
+        # CONSTRUIR MENSAGEM BASE (com status obrigatório)
+        mensagem = f"""{status_indicator} | {setup_info['emoji']} SINAL - {par} ${preco:,.2f}
 
 {setup_info['setup']}
 {setup_info['prioridade']}
 
-📊 SCORE ENHANCED: {score:.1f}/10 {score_visual}
-🎲 Risco: {risco['emoji']} {risco['nivel']}"""
+📊 SCORE: {score:.1f}/10 {score_visual}
+🎲 Risco: {risco['emoji']} {risco['nivel']}
+📡 Status: {status_detail}"""
         
         # ADICIONAR CONTEXTO VWAP (SE ARSENAL DISPONÍVEL)
-        if ARSENAL_DISPONIVEL:
+        if ARSENAL_DISPONIVEL and VWAP_DISPONIVEL:
             try:
                 df = tf_principal['df']
                 vwap_diario = analisador_vwap.calcular_vwap_periodo(df, '1D')
@@ -1059,10 +1202,11 @@ def enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_info):
 • Nível VWAP: ${analise_vwap.get('vwap_diario', 0):,.2f}"""
                 
             except Exception as e:
+                mensagem += f"\n\n⚠️ VWAP: Erro na análise ({str(e)[:50]}...)"
                 logging.warning(f"Erro contexto VWAP: {e}")
         
         # ADICIONAR CONTEXTO MACRO (SE ARSENAL DISPONÍVEL)
-        if ARSENAL_DISPONIVEL:
+        if ARSENAL_DISPONIVEL and MACRO_DISPONIVEL:
             try:
                 analise_macro = analisador_macro.obter_score_risco_macro()
                 risco_macro = analise_macro.get('score_risco_total', 0)
@@ -1073,9 +1217,10 @@ def enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_info):
 🌍 CONTEXTO MACRO:
 • Risk Score: {risco_macro:.1f}/10
 • Ajuste Posição: {analise_macro.get('ajuste_posicao', 1.0):.1f}x
-• {analise_macro.get('explicacao', '')}"""
+• {analise_macro.get('explicacao', '')[:60]}..."""
                 
             except Exception as e:
+                mensagem += f"\n\n⚠️ MACRO: Erro na análise ({str(e)[:50]}...)"
                 logging.warning(f"Erro contexto macro: {e}")
         
         # Análise por timeframe (preservar sua lógica)
@@ -1101,70 +1246,151 @@ def enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_info):
                     f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
                 )
         
-        # Indicadores atuais (preservar)
+        # Indicadores atuais
         r = tf_principal['df'].iloc[-1]
         mensagem += (
             f"\n*📊 INDICADORES ATUAIS:*\n"
             f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
             f"• MACD: {r['macd']:.4f} | Volume: {tf_principal['volume_ratio']:.1f}x\n"
-            f"• ATR: {r['atr']:.4f}\n"
+            f"• ATR: {r['atr']:.4f}\n\n"
         )
         
-        # Calcular alvos (preservar sua lógica)
-        atr = r['atr']
-        if par == 'BTC/USDT':
-            stop = round(preco - (atr * 1.2), 2)
-            alvo = round(preco + (atr * 2.5), 2)
+        # Critérios de bonus
+        if criterios_bonus:
+            mensagem += "*🎁 BONUS CONFLUÊNCIA:*\n"
+            for criterio in criterios_bonus[:3]:
+                mensagem += f"{criterio}\n"
+            mensagem += "\n"
+        
+        # Contexto e detalhes
+        if 'timeframes' in setup_info:
+            mensagem += f"*📋 DETALHES:*\n{setup_info['timeframes']}\n\n"
+        
+        if 'detalhes' in setup_info:
+            mensagem += f"*📋 ESPECÍFICOS:*\n{setup_info['detalhes']}\n\n"
+        
+        mensagem += f"{contexto_macro}\n\n"
+        mensagem += f"🕘 {timestamp}\n"
+        mensagem += f"📉 [TradingView]({link_tv})\n\n"
+        
+        # Recomendação baseada no score
+        if score >= 8.5:
+            explicacao = (
+                "*🎯 RECOMENDAÇÃO:*\n"
+                "Setup de alta qualidade com múltiplas confirmações. "
+                "Confluência entre timeframes detectada."
+            )
+        elif score >= 7.0:
+            explicacao = (
+                "*🎯 RECOMENDAÇÃO:*\n"
+                "Setup sólido com boa base técnica. "
+                "Gestão de risco recomendada."
+            )
         else:
-            stop = round(preco - (atr * 1.5), 2)
-            alvo = round(preco + (atr * 3.0), 2)
+            explicacao = (
+                "*🎯 RECOMENDAÇÃO:*\n"
+                "Setup de qualidade moderada. "
+                "Aguardar mais confirmações pode ser prudente."
+            )
         
-        # Position sizing ajustado por macro
-        tamanho_base = 250  # Seu tamanho base
-        ajuste_posicao = 1.0
-        
-        if ARSENAL_DISPONIVEL:
-            try:
-                analise_macro = analisador_macro.obter_score_risco_macro()
-                ajuste_posicao = analise_macro.get('ajuste_posicao', 1.0)
-            except:
-                pass
-        
-        tamanho_final = tamanho_base * ajuste_posicao
-        
-        mensagem += f"""
-
-💰 RECOMENDAÇÃO:
-• Entry: ${preco:,.2f}
-• Stop: ${stop:,.2f}
-• Target: ${alvo:,.2f}
-• Posição: R$ {tamanho_final:,.0f}"""
-        
-        # Contexto fundamentais (preservar)
-        contexto_macro = obter_dados_fundamentais()
-        mensagem += f"\n\n{contexto_macro}"
-        
-        # Timestamp (preservar)
-        agora_utc = datetime.datetime.utcnow()
-        agora_br = agora_utc - datetime.timedelta(hours=3)
-        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
-        
-        mensagem += f"\n\n🕘 {timestamp}"
-        
-        if ARSENAL_DISPONIVEL:
-            mensagem += "\n🏦 Sistema Enhanced com Arsenal Institucional"
+        mensagem += explicacao
         
         # Enviar alerta
-        if enviar_telegram(mensagem):
-            print(f"✅ ALERTA ENHANCED: {par} - {setup_info['setup']} (score: {score})")
-            registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
-            return True
+        if pode_enviar_alerta(par, setup_info['setup']):
+            if enviar_telegram(mensagem):
+                status_log = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE"
+                print(f"✅ ALERTA {status_log}: {par} - {setup_info['setup']} (score: {score})")
+                registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
+                return True
         
         return False
         
     except Exception as e:
-        logging.error(f"Erro ao enviar alerta enhanced: {e}")
+        logging.error(f"Erro ao enviar alerta avançado: {e}")
         return False
+
+def enviar_relatorio_status_avancado(relatorio):
+    """Relatório de status avançado com diagnóstico"""
+    try:
+        agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
+        
+        # Sinais monitorados
+        sinais = carregar_sinais_monitorados()
+        sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
+        
+        # TÍTULO COM STATUS DO ARSENAL
+        if ARSENAL_DISPONIVEL:
+            titulo = "🏦 Scanner Enhanced ETH/BTC"
+            subtitulo = "📊 RELATÓRIO SISTEMA COMPLETO"
+        else:
+            titulo = "📊 Scanner Base ETH/BTC"
+            subtitulo = "⚠️ RELATÓRIO MODO REDUZIDO"
+        
+        mensagem = (
+            f"{titulo}\n"
+            f"{subtitulo}\n\n"
+            f"⏰ Executado às {agora}\n"
+            f"🔍 Análise: Timeframes 1h + 4h\n"
+            f"📈 Resultado: Aguardando oportunidades\n"
+            f"📝 Sinais ativos: {sinais_abertos}\n\n"
+        )
+        
+        # STATUS DO ARSENAL
+        if not ARSENAL_DISPONIVEL:
+            mensagem += "*⚠️ STATUS ARSENAL:*\n"
+            if not VWAP_DISPONIVEL:
+                mensagem += f"❌ VWAP: {VWAP_ERRO[:50]}...\n"
+            if not MACRO_DISPONIVEL:
+                mensagem += f"❌ Macro: {MACRO_ERRO[:50]}...\n"
+            if not EXPLICADOR_DISPONIVEL:
+                mensagem += f"❌ Explicador: {EXPLICADOR_ERRO[:50]}...\n"
+            mensagem += "\n"
+        
+        # Status por par
+        mensagem += "*💰 ANÁLISE DETALHADA:*\n"
+        for item in relatorio:
+            par = item['par']
+            preco = item['preco']
+            rsi = item['rsi']
+            
+            # Análise do RSI
+            if rsi < 25:
+                rsi_status = "🔥 Oversold extremo"
+            elif rsi < 35:
+                rsi_status = "🟠 Oversold"
+            elif rsi > 75:
+                rsi_status = "🔴 Overbought"
+            elif rsi > 65:
+                rsi_status = "🟡 Overbought leve"
+            else:
+                rsi_status = "🟢 Neutro"
+            
+            mensagem += f"• {par}: ${preco:,.2f}\n"
+            mensagem += f"  RSI: {rsi:.1f} ({rsi_status})\n"
+        
+        # Setups monitorados
+        mensagem += (
+            f"\n*🔍 SETUPS MONITORADOS:*\n"
+            f"• Confluência Timeframes (1h+4h)\n"
+            f"• Bollinger Squeeze (explosão)\n"
+            f"• Divergências RSI\n"
+            f"• Breakouts com Volume\n"
+            f"• + 6 setups originais\n\n"
+            f"⏰ Próxima análise: 15 minutos\n"
+        )
+        
+        if ARSENAL_DISPONIVEL:
+            mensagem += "🏦 Scanner Enhanced ativo"
+        else:
+            mensagem += "📊 Scanner base ativo - Funcionalidades reduzidas"
+        
+        if enviar_telegram(mensagem):
+            print("✅ Relatório avançado enviado")
+        else:
+            print("❌ Falha no envio do relatório")
+            
+    except Exception as e:
+        logging.error(f"Erro no relatório avançado: {e}")
 
 # ===============================
 # === ANÁLISE PRINCIPAL AVANÇADA (PRESERVAR + ARSENAL)
@@ -1263,206 +1489,6 @@ def analisar_par_avancado(exchange, par):
         logging.error(f"Erro na análise avançada de {par}: {e}")
         return []
 
-# SUA FUNÇÃO ORIGINAL DE ALERTA (PRESERVADA COMO FALLBACK)
-def enviar_alerta_avancado(par, analise_tf, setup_info):
-    """Alerta com análise de múltiplos timeframes (sua versão original)"""
-    try:
-        # Dados do timeframe principal (1h)
-        tf_principal = analise_tf.get('1h', {})
-        if tf_principal.get('status') != 'ok':
-            return False
-        
-        preco = tf_principal['preco']
-        
-        # Score avançado
-        score, criterios_bonus = calcular_score_avancado(analise_tf, setup_info)
-        score_visual = gerar_score_visual(score)
-        risco = categorizar_risco(score)
-        
-        # Calcular alvos
-        df_1h = tf_principal['df']
-        atr = df_1h['atr'].iloc[-1]
-        
-        if par == 'BTC/USDT':
-            stop = round(preco - (atr * 1.2), 2)
-            alvo = round(preco + (atr * 2.5), 2)
-        else:
-            stop = round(preco - (atr * 1.5), 2)
-            alvo = round(preco + (atr * 3.0), 2)
-        
-        # Timestamp
-        agora_utc = datetime.datetime.utcnow()
-        agora_br = agora_utc - datetime.timedelta(hours=3)
-        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
-        
-        # Link TradingView
-        symbol_tv = par.replace("/", "")
-        link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_tv}"
-        
-        # Dados fundamentais
-        contexto_macro = obter_dados_fundamentais()
-        
-        # Construir mensagem avançada
-        mensagem = f"""{setup_info['emoji']} {setup_info['setup']}
-{setup_info['prioridade']}
-
-📊 Par: `{par}`
-💰 Preço: `${preco:,.2f}`
-🎯 Alvo: `${alvo:,.2f}`
-🛑 Stop: `${stop:,.2f}`
-
-📊 Score: {score_visual}
-🎲 Risco: {risco['emoji']} {risco['nivel']}"""
-        
-        # Análise por timeframe
-        mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
-        for tf, dados in analise_tf.items():
-            if dados.get('status') == 'ok':
-                tendencia_emoji = {
-                    'alta_forte': '🚀',
-                    'alta': '📈', 
-                    'lateral': '➡️',
-                    'baixa': '📉',
-                    'baixa_forte': '💥'
-                }.get(dados['tendencia'], '❓')
-                
-                vol_emoji = {
-                    'alta': '🔥',
-                    'normal': '🟡',
-                    'baixa': '😴'
-                }.get(dados['volatilidade'], '❓')
-                
-                mensagem += (
-                    f"• {tf}: {tendencia_emoji} {dados['tendencia']} "
-                    f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
-                )
-        
-        # Indicadores atuais
-        r = tf_principal['df'].iloc[-1]
-        mensagem += (
-            f"\n*📊 INDICADORES ATUAIS:*\n"
-            f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
-            f"• MACD: {r['macd']:.4f} | Volume: {tf_principal['volume_ratio']:.1f}x\n"
-            f"• ATR: {r['atr']:.4f}\n\n"
-        )
-        
-        # Critérios de bonus
-        if criterios_bonus:
-            mensagem += "*🎁 BONUS CONFLUÊNCIA:*\n"
-            for criterio in criterios_bonus[:3]:
-                mensagem += f"{criterio}\n"
-            mensagem += "\n"
-        
-        # Contexto e detalhes
-        if 'timeframes' in setup_info:
-            mensagem += f"*📋 DETALHES:*\n{setup_info['timeframes']}\n\n"
-        
-        if 'detalhes' in setup_info:
-            mensagem += f"*📋 ESPECÍFICOS:*\n{setup_info['detalhes']}\n\n"
-        
-        mensagem += f"{contexto_macro}\n\n"
-        mensagem += f"🕘 {timestamp}\n"
-        mensagem += f"📉 [TradingView]({link_tv})\n\n"
-        
-        # Recomendação baseada no score
-        if score >= 8.5:
-            explicacao = (
-                "*🎯 RECOMENDAÇÃO:*\n"
-                "Setup de alta qualidade com múltiplas confirmações. "
-                "Confluência entre timeframes detectada."
-            )
-        elif score >= 7.0:
-            explicacao = (
-                "*🎯 RECOMENDAÇÃO:*\n"
-                "Setup sólido com boa base técnica. "
-                "Gestão de risco recomendada."
-            )
-        else:
-            explicacao = (
-                "*🎯 RECOMENDAÇÃO:*\n"
-                "Setup de qualidade moderada. "
-                "Aguardar mais confirmações pode ser prudente."
-            )
-        
-        mensagem += explicacao
-        
-        # Enviar alerta
-        if pode_enviar_alerta(par, setup_info['setup']):
-            if enviar_telegram(mensagem):
-                print(f"✅ ALERTA AVANÇADO: {par} - {setup_info['setup']} (score: {score})")
-                registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
-                return True
-        
-        return False
-        
-    except Exception as e:
-        logging.error(f"Erro ao enviar alerta avançado: {e}")
-        return False
-
-def enviar_relatorio_status_avancado(relatorio):
-    """Relatório de status avançado"""
-    try:
-        agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
-        
-        # Sinais monitorados
-        sinais = carregar_sinais_monitorados()
-        sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
-        
-        mensagem = (
-            f"🤖 *Scanner Avançado ETH/BTC*\n"
-            f"📊 *RELATÓRIO TIMEFRAMES MÚLTIPLOS*\n\n"
-            f"⏰ Executado às {agora}\n"
-            f"🔍 Análise: Timeframes 1h + 4h\n"
-            f"📈 Resultado: Aguardando oportunidades\n"
-            f"📝 Sinais ativos: {sinais_abertos}\n\n"
-        )
-        
-        # Status por par
-        mensagem += "*💰 ANÁLISE DETALHADA:*\n"
-        for item in relatorio:
-            par = item['par']
-            preco = item['preco']
-            rsi = item['rsi']
-            
-            # Análise do RSI
-            if rsi < 25:
-                rsi_status = "🔥 Oversold extremo"
-            elif rsi < 35:
-                rsi_status = "🟠 Oversold"
-            elif rsi > 75:
-                rsi_status = "🔴 Overbought"
-            elif rsi > 65:
-                rsi_status = "🟡 Overbought leve"
-            else:
-                rsi_status = "🟢 Neutro"
-            
-            mensagem += f"• {par}: ${preco:,.2f}\n"
-            mensagem += f"  RSI: {rsi:.1f} ({rsi_status})\n"
-        
-        # Setups monitorados
-        mensagem += (
-            f"\n*🔍 SETUPS MONITORADOS:*\n"
-            f"• Confluência Timeframes (1h+4h)\n"
-            f"• Bollinger Squeeze (explosão)\n"
-            f"• Divergências RSI\n"
-            f"• Breakouts com Volume\n"
-            f"• + 6 setups originais\n\n"
-            f"⏰ Próxima análise: 15 minutos\n"
-        )
-        
-        if ARSENAL_DISPONIVEL:
-            mensagem += "🏦 Scanner Enhanced ativo"
-        else:
-            mensagem += "📊 Scanner base ativo"
-        
-        if enviar_telegram(mensagem):
-            print("✅ Relatório avançado enviado")
-        else:
-            print("❌ Falha no envio do relatório")
-            
-    except Exception as e:
-        logging.error(f"Erro no relatório avançado: {e}")
-
 # ===============================
 # === ESTATÍSTICAS
 # ===============================
@@ -1526,24 +1552,30 @@ def gerar_resumo_estatisticas():
         return "📊 Coletando estatísticas..."
 
 # ===============================
-# === FUNÇÃO PRINCIPAL ENHANCED
+# === FUNÇÃO PRINCIPAL ENHANCED COM DIAGNÓSTICO (MODIFICADO)
 # ===============================
 
 def executar_scanner_avancado():
-    """Scanner principal avançado com arsenal opcional"""
+    """Scanner principal avançado com arsenal opcional + DIAGNÓSTICO AUTOMÁTICO"""
     try:
         titulo = "🚀 SCANNER AVANÇADO ETH/BTC"
         if ARSENAL_DISPONIVEL:
-            titulo += " - ENHANCED"
+            titulo += " - ENHANCED v2.1"
             print(f"{titulo}")
             print("🏦 Arsenal: VWAP + Contexto Macro + Explicações")
         else:
+            titulo += " - BASE v2.1"
             print(f"{titulo}")
             print("📊 Sistema base preservado funcionando")
         
         print(f"⏰ Executado em: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print(f"📊 Pares: {', '.join(PARES_ALVOS)}")
         print(f"📈 Timeframes: {', '.join(TIMEFRAMES)}")
+        
+        # DIAGNÓSTICO AUTOMÁTICO E STATUS (NOVO)
+        print("\n🏥 VERIFICANDO SAÚDE DO SISTEMA...")
+        diagnosticar_arsenal()
+        enviar_status_sistema()
         
         # Inicializar exchange
         exchange = ccxt.okx({'enableRateLimit': True, 'timeout': 30000})
@@ -1622,12 +1654,30 @@ def executar_scanner_avancado():
     except Exception as e:
         logging.error(f"Erro crítico no scanner avançado: {e}")
         
-        # Alerta de erro
+        # Alerta de erro com diagnóstico
         if TOKEN != "dummy_token":
+            componentes_status = []
+            if VWAP_DISPONIVEL:
+                componentes_status.append("✅ VWAP")
+            else:
+                componentes_status.append("❌ VWAP")
+            
+            if MACRO_DISPONIVEL:
+                componentes_status.append("✅ Macro")
+            else:
+                componentes_status.append("❌ Macro")
+            
+            if EXPLICADOR_DISPONIVEL:
+                componentes_status.append("✅ Explicador")
+            else:
+                componentes_status.append("❌ Explicador")
+            
             mensagem_erro = (
                 f"🚨 *ERRO SCANNER AVANÇADO*\n\n"
                 f"❌ {str(e)[:80]}...\n"
-                f"⏰ {datetime.datetime.utcnow().strftime('%H:%M UTC')}"
+                f"📊 Arsenal: {' | '.join(componentes_status)}\n"
+                f"⏰ {datetime.datetime.utcnow().strftime('%H:%M UTC')}\n\n"
+                f"🔧 Verificar logs para diagnóstico completo"
             )
             enviar_telegram(mensagem_erro)
         
@@ -1638,24 +1688,180 @@ def executar_scanner_avancado():
 # ===============================
 
 if __name__ == "__main__":
-    titulo = "🎯 SCANNER ETH/BTC AVANÇADO"
+    titulo = "🎯 SCANNER ETH/BTC AVANÇADO v2.1"
     
     if ARSENAL_DISPONIVEL:
-        print(f"{titulo} - ENHANCED v2.0")
+        print(f"{titulo} - ENHANCED")
         print("📋 Múltiplos timeframes + Arsenal institucional")
         print("🏦 VWAP + Contexto Macro + Explicações")
-        print("⚡ Análise premium com score visual\n")
+        print("⚡ Análise premium com diagnóstico automático\n")
     else:
-        print(f"{titulo} - Base v1.0")
+        print(f"{titulo} - BASE")
         print("📋 Múltiplos timeframes + Setups avançados")
         print("🔍 Sistema base preservado funcionando")
-        print("⚡ Análise completa com score visual\n")
+        print("⚡ Análise completa com diagnóstico transparente\n")
     
     sucesso = executar_scanner_avancado()
     
     if sucesso:
-        print("🎉 Scanner avançado executado com sucesso!")
+        status_final = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE"
+        print(f"🎉 Scanner {status_final} executado com sucesso!")
         exit(0)
     else:
         print("💥 Scanner avançado falhou!")
         exit(1)
+                    'alta': '🔥',
+                    'normal': '🟡',
+                    'baixa': '😴'
+                }.get(dados['volatilidade'], '❓')
+                
+                mensagem += (
+                    f"• {tf}: {tendencia_emoji} {dados['tendencia']} "
+                    f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
+                )
+        
+        # Indicadores atuais (preservar)
+        r = tf_principal['df'].iloc[-1]
+        mensagem += (
+            f"\n*📊 INDICADORES ATUAIS:*\n"
+            f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
+            f"• MACD: {r['macd']:.4f} | Volume: {tf_principal['volume_ratio']:.1f}x\n"
+            f"• ATR: {r['atr']:.4f}\n"
+        )
+        
+        # Calcular alvos (preservar sua lógica)
+        atr = r['atr']
+        if par == 'BTC/USDT':
+            stop = round(preco - (atr * 1.2), 2)
+            alvo = round(preco + (atr * 2.5), 2)
+        else:
+            stop = round(preco - (atr * 1.5), 2)
+            alvo = round(preco + (atr * 3.0), 2)
+        
+        # Position sizing ajustado por macro
+        tamanho_base = 250  # Seu tamanho base
+        ajuste_posicao = 1.0
+        
+        if ARSENAL_DISPONIVEL and MACRO_DISPONIVEL:
+            try:
+                analise_macro = analisador_macro.obter_score_risco_macro()
+                ajuste_posicao = analise_macro.get('ajuste_posicao', 1.0)
+            except:
+                pass
+        
+        tamanho_final = tamanho_base * ajuste_posicao
+        
+        mensagem += f"""
+
+💰 RECOMENDAÇÃO:
+• Entry: ${preco:,.2f}
+• Stop: ${stop:,.2f}
+• Target: ${alvo:,.2f}
+• Posição: R$ {tamanho_final:,.0f}"""
+        
+        # Contexto fundamentais (preservar)
+        contexto_macro = obter_dados_fundamentais()
+        mensagem += f"\n\n{contexto_macro}"
+        
+        # Timestamp (preservar)
+        agora_utc = datetime.datetime.utcnow()
+        agora_br = agora_utc - datetime.timedelta(hours=3)
+        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
+        
+        mensagem += f"\n\n🕘 {timestamp}"
+        
+        # STATUS FINAL OBRIGATÓRIO
+        if ARSENAL_DISPONIVEL:
+            mensagem += "\n🏦 Sistema Enhanced - Arsenal Completo"
+        else:
+            erros_principais = []
+            if not VWAP_DISPONIVEL:
+                erros_principais.append("VWAP")
+            if not MACRO_DISPONIVEL:
+                erros_principais.append("Macro")
+            if not EXPLICADOR_DISPONIVEL:
+                erros_principais.append("Explicador")
+            
+            mensagem += f"\n⚠️ Sistema Base - Sem: {', '.join(erros_principais)}"
+        
+        # Enviar alerta
+        if enviar_telegram(mensagem):
+            status_log = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE ONLY"
+            print(f"✅ ALERTA {status_log}: {par} - {setup_info['setup']} (score: {score})")
+            registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
+            return True
+        
+        return False
+        
+    except Exception as e:
+        logging.error(f"Erro ao enviar alerta enhanced: {e}")
+        return False
+
+# SUA FUNÇÃO ORIGINAL DE ALERTA (PRESERVADA COMO FALLBACK)
+def enviar_alerta_avancado(par, analise_tf, setup_info):
+    """Alerta com análise de múltiplos timeframes (sua versão original + status)"""
+    try:
+        # Dados do timeframe principal (1h)
+        tf_principal = analise_tf.get('1h', {})
+        if tf_principal.get('status') != 'ok':
+            return False
+        
+        preco = tf_principal['preco']
+        
+        # Score avançado
+        score, criterios_bonus = calcular_score_avancado(analise_tf, setup_info)
+        score_visual = gerar_score_visual(score)
+        risco = categorizar_risco(score)
+        
+        # Calcular alvos
+        df_1h = tf_principal['df']
+        atr = df_1h['atr'].iloc[-1]
+        
+        if par == 'BTC/USDT':
+            stop = round(preco - (atr * 1.2), 2)
+            alvo = round(preco + (atr * 2.5), 2)
+        else:
+            stop = round(preco - (atr * 1.5), 2)
+            alvo = round(preco + (atr * 3.0), 2)
+        
+        # Timestamp
+        agora_utc = datetime.datetime.utcnow()
+        agora_br = agora_utc - datetime.timedelta(hours=3)
+        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
+        
+        # Link TradingView
+        symbol_tv = par.replace("/", "")
+        link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_tv}"
+        
+        # Dados fundamentais
+        contexto_macro = obter_dados_fundamentais()
+        
+        # STATUS OBRIGATÓRIO NO FALLBACK TAMBÉM
+        status_indicator = "📊 BASE" if not ARSENAL_DISPONIVEL else "🏦 ENHANCED"
+        
+        # Construir mensagem avançada
+        mensagem = f"""{status_indicator} | {setup_info['emoji']} {setup_info['setup']}
+{setup_info['prioridade']}
+
+📊 Par: `{par}`
+💰 Preço: `${preco:,.2f}`
+🎯 Alvo: `${alvo:,.2f}`
+🛑 Stop: `${stop:,.2f}`
+
+📊 Score: {score_visual}
+🎲 Risco: {risco['emoji']} {risco['nivel']}"""
+        
+        # Análise por timeframe
+        mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
+        for tf, dados in analise_tf.items():
+            if dados.get('status') == 'ok':
+                tendencia_emoji = {
+                    'alta_forte': '🚀',
+                    'alta': '📈', 
+                    'lateral': '➡️',
+                    'baixa': '📉',
+                    'baixa_forte': '💥'
+                }.get(dados['tendencia'], '❓')
+                
+                vol_emoji = {
+                    '
