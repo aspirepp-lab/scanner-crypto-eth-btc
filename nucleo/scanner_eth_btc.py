@@ -22,7 +22,1185 @@ import pandas as pd
 # Verificar versões e forçar compatibilidade
 try:
     # Força recompilação de cache do pandas se necessário
-    pd.options.mode.chained_assignment = None
+    pd.options.mode.chained_assignment =         # Resistência dos últimos 15 candles
+        resistencia = df['high'].iloc[-15:-1].max()
+        
+        # Contar toques na resistência
+        touches = ((df['high'].iloc[-15:-1] >= resistencia * 0.995) & 
+                  (df['high'].iloc[-15:-1] <= resistencia * 1.005)).sum()
+        
+        # Critérios
+        resistencia_forte = touches >= 3
+        breakout = r['close'] > resistencia * 1.002
+        volume_explosivo = df['volume'].iloc[-1] > df['volume'].mean() * 3.0
+        rsi_saudavel = 40 < r['rsi'] < 75
+        macd_confirmando = r['macd'] > r['macd_signal']
+        
+        if resistencia_forte and breakout and volume_explosivo and rsi_saudavel and macd_confirmando:
+            return {
+                'setup': '💥 BREAKOUT VOLUME EXTREMO',
+                'prioridade': '🔴 ALTA PROBABILIDADE',
+                'emoji': '💥',
+                'id': 'breakout_extremo',
+                'score_base': 9.0,
+                'detalhes': f"Resistência ${resistencia:.2f} testada {touches}x"
+            }
+            
+    except Exception as e:
+        logging.warning(f"Erro no breakout avançado: {e}")
+    
+    return None
+
+# ===============================
+# === SETUPS ORIGINAIS
+# ===============================
+
+def verificar_setup_rigoroso(r, df):
+    try:
+        campos = ['rsi', 'ema9', 'ema21', 'macd', 'macd_signal', 'adx']
+        if any(pd.isna(r[campo]) for campo in campos):
+            return None
+        
+        condicoes = [
+            r['rsi'] < 40,
+            df['ema9'].iloc[-2] < df['ema21'].iloc[-2] and r['ema9'] > r['ema21'],
+            r['macd'] > r['macd_signal'],
+            r['adx'] > 20,
+            df['volume'].iloc[-1] > df['volume'].mean() * 1.5,
+            df['supertrend'].iloc[-1] == True
+        ]
+        
+        if all(condicoes):
+            return {
+                'setup': '🎯 SETUP RIGOROSO', 
+                'prioridade': '🟠 PRIORIDADE ALTA', 
+                'emoji': '🎯',
+                'id': 'setup_rigoroso'
+            }
+    except:
+        pass
+    return None
+
+def verificar_setup_alta_confluencia(r, df):
+    try:
+        condicoes = [
+            r['rsi'] < 40,
+            df['ema9'].iloc[-2] < df['ema21'].iloc[-2] and r['ema9'] > r['ema21'],
+            r['macd'] > r['macd_signal'],
+            r['atr'] > df['atr'].mean(),
+            r['obv'] > df['obv'].mean(),
+            r['adx'] > 20,
+            r['close'] > r['ema200'],
+            df['volume'].iloc[-1] > df['volume'].mean(),
+            df['supertrend'].iloc[-1],
+            detectar_candle_forte(df)
+        ]
+        
+        if sum(condicoes) >= 6:
+            return {
+                'setup': '🔥 SETUP ALTA CONFLUÊNCIA',
+                'prioridade': '🟥 PRIORIDADE MÁXIMA',
+                'emoji': '🔥',
+                'id': 'setup_alta_confluencia'
+            }
+    except:
+        pass
+    return None
+
+def verificar_setup_rompimento(r, df):
+    if len(df) < 10:
+        return None
+    try:
+        resistencia = df['high'].iloc[-10:-1].max()
+        if pd.isna(resistencia):
+            return None
+            
+        condicoes = [
+            r['close'] > resistencia,
+            df['volume'].iloc[-1] > df['volume'].mean(),
+            r['rsi'] > 55 and df['rsi'].iloc[-1] > df['rsi'].iloc[-2],
+            df['supertrend'].iloc[-1]
+        ]
+        
+        if all(condicoes):
+            return {
+                'setup': '🚀 SETUP ROMPIMENTO',
+                'prioridade': '🟩 ALTA OPORTUNIDADE',
+                'emoji': '🚀',
+                'id': 'setup_rompimento'
+            }
+    except:
+        pass
+    return None
+
+def verificar_setup_reversao_tecnica(r, df):
+    if len(df) < 3:
+        return None
+    try:
+        condicoes = [
+            r['obv'] > df['obv'].mean(),
+            df['close'].iloc[-2] > df['open'].iloc[-2],
+            df['close'].iloc[-1] > df['close'].iloc[-2],
+            detectar_martelo(df) or detectar_engolfo_alta(df),
+            df['rsi'].iloc[-1] > df['rsi'].iloc[-2]
+        ]
+        
+        if all(condicoes):
+            return {
+                'setup': '🔁 SETUP REVERSÃO TÉCNICA',
+                'prioridade': '🟣 OPORTUNIDADE DE REVERSÃO',
+                'emoji': '🔁',
+                'id': 'setup_reversao_tecnica'
+            }
+    except:
+        pass
+    return None
+
+def verificar_setup_intermediario(r, df):
+    try:
+        condicoes = [
+            r['rsi'] < 50,
+            r['ema9'] > r['ema21'],
+            r['macd'] > r['macd_signal'],
+            r['adx'] > 15,
+            df['volume'].iloc[-1] > df['volume'].mean()
+        ]
+        
+        if all(condicoes):
+            return {
+                'setup': '⚙️ SETUP INTERMEDIÁRIO',
+                'prioridade': '🟡 PRIORIDADE MÉDIA-ALTA',
+                'emoji': '⚙️',
+                'id': 'setup_intermediario'
+            }
+    except:
+        pass
+    return None
+
+def verificar_setup_leve(r, df):
+    try:
+        condicoes = [
+            r['ema9'] > r['ema21'],
+            r['adx'] > 15,
+            df['volume'].iloc[-1] > df['volume'].mean()
+        ]
+        
+        if sum(condicoes) >= 2:
+            return {
+                'setup': '🔹 SETUP LEVE',
+                'prioridade': '🔵 PRIORIDADE MÉDIA',
+                'emoji': '🔹',
+                'id': 'setup_leve'
+            }
+    except:
+        pass
+    return None
+
+# ===============================
+# === SISTEMA DE SCORE VISUAL
+# ===============================
+
+def gerar_score_visual(score):
+    """Representação visual do score"""
+    if score >= 9.0:
+        return "🟢🟢🟢🟢🟢 (Excelente)"
+    elif score >= 8.0:
+        return "🟢🟢🟢🟢🟡 (Muito Bom)"
+    elif score >= 7.0:
+        return "🟢🟢🟢🟡🟡 (Bom)"
+    elif score >= 6.0:
+        return "🟢🟢🟡🟡🟡 (Moderado)"
+    elif score >= 5.0:
+        return "🟢🟡🟡🟡🟡 (Fraco)"
+    else:
+        return "🟡🟡🟡⚫⚫ (Muito Fraco)"
+
+def categorizar_risco(score):
+    """Categorização de risco"""
+    if score >= 8.5:
+        return {"nivel": "BAIXO", "emoji": "🟢", "cor": "Verde"}
+    elif score >= 7.0:
+        return {"nivel": "MÉDIO", "emoji": "🟡", "cor": "Amarelo"}
+    elif score >= 5.5:
+        return {"nivel": "ALTO", "emoji": "🟠", "cor": "Laranja"}
+    else:
+        return {"nivel": "MUITO ALTO", "emoji": "🔴", "cor": "Vermelho"}
+
+def calcular_score_avancado(analise_tf, setup_info):
+    """Score avançado considerando múltiplos timeframes"""
+    try:
+        score_base = setup_info.get('score_base', 7.0)
+        bonus = 0
+        criterios = []
+        
+        # Bonus por confluência de timeframes
+        if len(analise_tf) > 1:
+            tendencias = [tf['tendencia'] for tf in analise_tf.values() if tf.get('status') == 'ok']
+            if len(set(tendencias)) == 1 and tendencias[0] in ['alta', 'alta_forte']:
+                bonus += 1.0
+                criterios.append("✅ Confluência entre timeframes")
+            else:
+                criterios.append("❌ Timeframes divergentes")
+        
+        # Bonus por força geral
+        forcas = [tf['forca'] for tf in analise_tf.values() if tf.get('status') == 'ok']
+        if forcas and min(forcas) >= 6:
+            bonus += 0.5
+            criterios.append("✅ Força consistente")
+        
+        # Bonus por volatilidade adequada
+        volatilidades = [tf['volatilidade'] for tf in analise_tf.values() if tf.get('status') == 'ok']
+        if 'normal' in volatilidades or 'alta' in volatilidades:
+            bonus += 0.3
+            criterios.append("✅ Volatilidade adequada")
+        
+        score_final = min(score_base + bonus, 10.0)
+        return score_final, criterios
+        
+    except Exception as e:
+        return 7.0, [f"Erro no score: {e}"]
+
+# ===============================
+# === GESTÃO DE SINAIS
+# ===============================
+
+def carregar_sinais_monitorados():
+    try:
+        with open(ARQUIVO_SINAIS_MONITORADOS, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+def salvar_sinais_monitorados(sinais):
+    with open(ARQUIVO_SINAIS_MONITORADOS, 'w') as f:
+        json.dump(sinais, f, indent=2)
+
+def registrar_sinal_monitorado(par, setup_id, preco_entrada, alvo, stop):
+    sinais = carregar_sinais_monitorados()
+    novo_sinal = {
+        "par": par,
+        "setup": setup_id,
+        "entrada": preco_entrada,
+        "alvo": alvo,
+        "stop": stop,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "status": "em_aberto"
+    }
+    sinais.append(novo_sinal)
+    salvar_sinais_monitorados(sinais)
+    print(f"📝 Sinal registrado: {par} - {setup_id}")
+
+def verificar_sinais_monitorados(exchange):
+    """Verifica sinais em aberto"""
+    sinais = carregar_sinais_monitorados()
+    sinais_atualizados = []
+    
+    for sinal in sinais:
+        if sinal['status'] != "em_aberto":
+            continue
+            
+        par = sinal['par']
+        try:
+            ticker = exchange.fetch_ticker(par)
+            preco_atual = ticker['last']
+        except Exception as e:
+            continue
+        
+        status_anterior = sinal['status']
+        
+        if preco_atual >= sinal['alvo']:
+            sinal['status'] = "🎯 Alvo atingido"
+            sinal['preco_final'] = preco_atual
+        elif preco_atual <= sinal['stop']:
+            sinal['status'] = "🛑 Stop atingido"
+            sinal['preco_final'] = preco_atual
+        else:
+            dt_alerta = datetime.datetime.fromisoformat(sinal['timestamp'])
+            tempo_passado = datetime.datetime.utcnow() - dt_alerta
+            if tempo_passado.total_seconds() >= 86400:
+                sinal['status'] = "⏰ Expirado (24h)"
+                sinal['preco_final'] = preco_atual
+        
+        if sinal['status'] != status_anterior:
+            sinal['atualizado_em'] = datetime.datetime.utcnow().isoformat()
+            sinais_atualizados.append(sinal)
+    
+    if sinais_atualizados:
+        salvar_sinais_monitorados(sinais)
+        for sinal in sinais_atualizados:
+            enviar_notificacao_fechamento(sinal)
+    
+    return sinais_atualizados
+
+def enviar_notificacao_fechamento(sinal):
+    """Notificação de fechamento"""
+    try:
+        dt_inicio = datetime.datetime.fromisoformat(sinal['timestamp'])
+        dt_fim = datetime.datetime.fromisoformat(sinal['atualizado_em'])
+        duracao = dt_fim - dt_inicio
+        horas = int(duracao.total_seconds() // 3600)
+        minutos = int((duracao.total_seconds() % 3600) // 60)
+        
+        resultado = "🎉 SUCESSO" if "Alvo" in sinal['status'] else "⚠️ STOP" if "Stop" in sinal['status'] else "⏰ EXPIRADO"
+        
+        mensagem = (
+            f"📊 *SINAL FINALIZADO*\n\n"
+            f"{resultado}\n\n"
+            f"📊 Par: `{sinal['par']}`\n"
+            f"📋 Setup: {sinal['setup']}\n"
+            f"💰 Entrada: `${sinal['entrada']:.2f}`\n"
+            f"🏁 Saída: `${sinal.get('preco_final', 0):.2f}`\n"
+            f"⏱️ Duração: {horas}h {minutos}min\n"
+            f"📍 Status: {sinal['status']}"
+        )
+        
+        enviar_telegram(mensagem)
+    except Exception as e:
+        logging.error(f"Erro notificação fechamento: {e}")
+
+# ===============================
+# === DADOS FUNDAMENTAIS
+# ===============================
+
+def abreviar_valor(valor):
+    if valor >= 1_000_000_000_000:
+        return f"${valor/1_000_000_000_000:.2f}T"
+    elif valor >= 1_000_000_000:
+        return f"${valor/1_000_000_000:.2f}B"
+    elif valor >= 1_000_000:
+        return f"${valor/1_000_000:.2f}M"
+    else:
+        return f"${valor:,.2f}"
+
+def obter_dados_fundamentais():
+    try:
+        total = requests.get("https://api.coingecko.com/api/v3/global", timeout=5).json()
+        market_data = total.get('data', {})
+        
+        market_cap = market_data.get('total_market_cap', {}).get('usd')
+        market_cap_change = market_data.get('market_cap_change_percentage_24h_usd', 0)
+        btc_dominance = market_data.get('market_cap_percentage', {}).get('btc')
+        
+        if market_cap is None or btc_dominance is None:
+            return "*Dados fundamentais indisponíveis*"
+        
+        emoji_cap = "📈" if market_cap_change >= 0 else "📉"
+        
+        # Contexto de mercado
+        contexto = ""
+        if market_cap_change < -3:
+            contexto = "\n🔴 *Correção em curso*"
+        elif market_cap_change > 3:
+            contexto = "\n🟢 *Rally em andamento*"
+        
+        # Fear & Greed Index
+        try:
+            fg_response = requests.get("https://api.alternative.me/fng/?limit=1", timeout=3).json()
+            indice = fg_response['data'][0]
+            valor_fg = int(indice['value'])
+            
+            if valor_fg >= 75:
+                emoji_fg = "🔥"
+            elif valor_fg >= 55:
+                emoji_fg = "😊"
+            elif valor_fg >= 45:
+                emoji_fg = "😐"
+            elif valor_fg >= 25:
+                emoji_fg = "😰"
+            else:
+                emoji_fg = "🥶"
+                
+            fear_greed = f"{valor_fg} {emoji_fg} ({indice['value_classification']})"
+        except:
+            fear_greed = "Indisponível"
+        
+        return (
+            f"*🌍 CONTEXTO MACRO:*\n"
+            f"• Cap. Total: {abreviar_valor(market_cap)} {emoji_cap} ({market_cap_change:+.1f}%)\n"
+            f"• Domínio BTC: {btc_dominance:.1f}%\n"
+            f"• Fear & Greed: {fear_greed}"
+            + contexto
+        )
+    
+    except Exception as e:
+        return "*Dados macro indisponíveis*"
+
+# ===============================
+# === COMUNICAÇÃO TELEGRAM
+# ===============================
+
+def pode_enviar_alerta(par, setup):
+    agora = datetime.datetime.utcnow()
+    chave = f"{par}_{setup}"
+    
+    if chave in alertas_enviados:
+        delta = (agora - alertas_enviados[chave]).total_seconds()
+        if delta < TEMPO_REENVIO:
+            return False
+    
+    alertas_enviados[chave] = agora
+    return True
+
+def enviar_telegram(mensagem):
+    if not TOKEN or TOKEN == "dummy_token":
+        print(f"[TELEGRAM SIMULADO] {mensagem}")
+        return True
+    
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": mensagem,
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": True
+    }
+    
+    try:
+        response = requests.post(url, data=payload, timeout=10)
+        return response.status_code == 200
+    except:
+        return False
+
+# ===============================
+# === ALERTAS COM DIAGNÓSTICO (MODIFICADO)
+# ===============================
+
+def enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_info):
+    """Alerta com análise de múltiplos timeframes + arsenal institucional + DIAGNÓSTICO"""
+    try:
+        # Dados do timeframe principal (1h)
+        tf_principal = analise_tf.get('1h', {})
+        if tf_principal.get('status') != 'ok':
+            return False
+        
+        preco = tf_principal['preco']
+        
+        # Score avançado
+        score, criterios_bonus = calcular_score_avancado(analise_tf, setup_info)
+        score_visual = gerar_score_visual(score)
+        risco = categorizar_risco(score)
+        
+        # Usar sua lógica atual de controle
+        if not pode_enviar_alerta(par, setup_info.get('id', '')):
+            return False
+        
+        # INDICADOR DE STATUS OBRIGATÓRIO
+        if ARSENAL_DISPONIVEL:
+            status_indicator = "🏦 ENHANCED"
+            status_detail = "Sistema completo ativo"
+        else:
+            status_indicator = "⚠️ BASE ONLY"
+            componentes_ok = sum([VWAP_DISPONIVEL, MACRO_DISPONIVEL, EXPLICADOR_DISPONIVEL])
+            status_detail = f"Arsenal parcial ({componentes_ok}/3)"
+        
+        # CONSTRUIR MENSAGEM BASE (com status obrigatório)
+        mensagem = f"""{status_indicator} | {setup_info['emoji']} SINAL - {par} ${preco:,.2f}
+
+{setup_info['setup']}
+{setup_info['prioridade']}
+
+📊 SCORE: {score:.1f}/10 {score_visual}
+🎲 Risco: {risco['emoji']} {risco['nivel']}"""
+        
+        # Análise por timeframe
+        mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
+        for tf, dados in analise_tf.items():
+            if dados.get('status') == 'ok':
+                tendencia_emoji = {
+                    'alta_forte': '🚀',
+                    'alta': '📈', 
+                    'lateral': '➡️',
+                    'baixa': '📉',
+                    'baixa_forte': '💥'
+                }.get(dados['tendencia'], '❓')
+                
+                vol_emoji = {
+                    'alta': '🔥',
+                    'normal': '🟡',
+                    'baixa': '😴'
+                }.get(dados['volatilidade'], '❓')
+                
+                mensagem += (
+                    f"• {tf}: {tendencia_emoji} {dados['tendencia']} "
+                    f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
+                )
+        
+        # Indicadores atuais
+        r = tf_principal['df'].iloc[-1]
+        mensagem += (
+            f"\n*📊 INDICADORES ATUAIS:*\n"
+            f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
+            f"• MACD: {r['macd']:.4f} | Volume: {tf_principal['volume_ratio']:.1f}x\n"
+            f"• ATR: {r['atr']:.4f}\n\n"
+        )
+        
+        # Critérios de bonus
+        if criterios_bonus:
+            mensagem += "*🎁 BONUS CONFLUÊNCIA:*\n"
+            for criterio in criterios_bonus[:3]:
+                mensagem += f"{criterio}\n"
+            mensagem += "\n"
+        
+        # Contexto e detalhes
+        if 'timeframes' in setup_info:
+            mensagem += f"*📋 DETALHES:*\n{setup_info['timeframes']}\n\n"
+        
+        if 'detalhes' in setup_info:
+            mensagem += f"*📋 ESPECÍFICOS:*\n{setup_info['detalhes']}\n\n"
+        
+        mensagem += f"{contexto_macro}\n\n"
+        mensagem += f"🕘 {timestamp}\n"
+        mensagem += f"📉 [TradingView]({link_tv})\n\n"
+        
+        # Recomendação baseada no score
+        if score >= 8.5:
+            explicacao = (
+                "*🎯 RECOMENDAÇÃO:*\n"
+                "Setup de alta qualidade com múltiplas confirmações. "
+                "Confluência entre timeframes detectada."
+            )
+        elif score >= 7.0:
+            explicacao = (
+                "*🎯 RECOMENDAÇÃO:*\n"
+                "Setup sólido com boa base técnica. "
+                "Gestão de risco recomendada."
+            )
+        else:
+            explicacao = (
+                "*🎯 RECOMENDAÇÃO:*\n"
+                "Setup de qualidade moderada. "
+                "Aguardar mais confirmações pode ser prudente."
+            )
+        
+        mensagem += explicacao
+        
+        # Enviar alerta
+        if pode_enviar_alerta(par, setup_info['setup']):
+            if enviar_telegram(mensagem):
+                status_log = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE"
+                print(f"✅ ALERTA {status_log}: {par} - {setup_info['setup']} (score: {score})")
+                registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
+                return True
+        
+        return False
+        
+    except Exception as e:
+        logging.error(f"Erro ao enviar alerta avançado: {e}")
+        return False
+
+def enviar_relatorio_status_avancado(relatorio):
+    """Relatório de status avançado com diagnóstico"""
+    try:
+        agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
+        
+        # Sinais monitorados
+        sinais = carregar_sinais_monitorados()
+        sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
+        
+        # TÍTULO COM STATUS DO ARSENAL
+        if ARSENAL_DISPONIVEL:
+            titulo = "🏦 Scanner Enhanced ETH/BTC"
+            subtitulo = "📊 RELATÓRIO SISTEMA COMPLETO"
+        else:
+            titulo = "📊 Scanner Base ETH/BTC"
+            subtitulo = "⚠️ RELATÓRIO MODO REDUZIDO"
+        
+        mensagem = (
+            f"{titulo}\n"
+            f"{subtitulo}\n\n"
+            f"⏰ Executado às {agora}\n"
+            f"🔍 Análise: Timeframes 1h + 4h\n"
+            f"📈 Resultado: Aguardando oportunidades\n"
+            f"📝 Sinais ativos: {sinais_abertos}\n\n"
+        )
+        
+        # STATUS DO ARSENAL
+        if not ARSENAL_DISPONIVEL:
+            mensagem += "*⚠️ STATUS ARSENAL:*\n"
+            if not VWAP_DISPONIVEL:
+                mensagem += f"❌ VWAP: {VWAP_ERRO[:50]}...\n"
+            if not MACRO_DISPONIVEL:
+                mensagem += f"❌ Macro: {MACRO_ERRO[:50]}...\n"
+            if not EXPLICADOR_DISPONIVEL:
+                mensagem += f"❌ Explicador: {EXPLICADOR_ERRO[:50]}...\n"
+            mensagem += "\n"
+        
+        # Status por par
+        mensagem += "*💰 ANÁLISE DETALHADA:*\n"
+        for item in relatorio:
+            par = item['par']
+            preco = item['preco']
+            rsi = item['rsi']
+            
+            # Análise do RSI
+            if rsi < 25:
+                rsi_status = "🔥 Oversold extremo"
+            elif rsi < 35:
+                rsi_status = "🟠 Oversold"
+            elif rsi > 75:
+                rsi_status = "🔴 Overbought"
+            elif rsi > 65:
+                rsi_status = "🟡 Overbought leve"
+            else:
+                rsi_status = "🟢 Neutro"
+            
+            mensagem += f"• {par}: ${preco:,.2f}\n"
+            mensagem += f"  RSI: {rsi:.1f} ({rsi_status})\n"
+        
+        # Setups monitorados
+        mensagem += (
+            f"\n*🔍 SETUPS MONITORADOS:*\n"
+            f"• Confluência Timeframes (1h+4h)\n"
+            f"• Bollinger Squeeze (explosão)\n"
+            f"• Divergências RSI\n"
+            f"• Breakouts com Volume\n"
+            f"• + 6 setups originais\n\n"
+            f"⏰ Próxima análise: 15 minutos\n"
+        )
+        
+        if ARSENAL_DISPONIVEL:
+            mensagem += "🏦 Scanner Enhanced ativo"
+        else:
+            mensagem += "📊 Scanner base ativo - Funcionalidades reduzidas"
+        
+        if enviar_telegram(mensagem):
+            print("✅ Relatório avançado enviado")
+        else:
+            print("❌ Falha no envio do relatório")
+            
+    except Exception as e:
+        logging.error(f"Erro no relatório avançado: {e}")
+
+# ===============================
+# === ANÁLISE PRINCIPAL AVANÇADA (PRESERVAR + ARSENAL)
+# ===============================
+
+def analisar_par_avancado(exchange, par):
+    """Análise avançada com múltiplos timeframes + arsenal opcional"""
+    try:
+        print(f"🔍 Análise avançada de {par}...")
+        
+        # SUA ANÁLISE ATUAL (PRESERVAR 100%)
+        analise_tf = analisar_multiplos_timeframes(exchange, par)
+        
+        # Verificar dados válidos
+        dados_validos = any(tf.get('status') == 'ok' for tf in analise_tf.values())
+        if not dados_validos:
+            print(f"⚠️ Dados insuficientes para {par}")
+            return []
+        
+        sinais_encontrados = []
+        
+        # Setup especial: Confluência entre timeframes (PRESERVAR)
+        setup_confluencia = verificar_confluencia_timeframes(analise_tf, par)
+        if setup_confluencia:
+            if ARSENAL_DISPONIVEL:
+                if enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_confluencia):
+                    sinais_encontrados.append(setup_confluencia)
+            else:
+                # FALLBACK: Seu sistema atual
+                if enviar_alerta_avancado(par, analise_tf, setup_confluencia):
+                    sinais_encontrados.append(setup_confluencia)
+        
+        # Analisar setups em cada timeframe (PRESERVAR)
+        for tf, dados in analise_tf.items():
+            if dados.get('status') != 'ok':
+                continue
+                
+            df = dados['df']
+            r = df.iloc[-1]
+            
+            # Setups avançados (PRESERVAR TODOS)
+            setups_avancados = [
+                verificar_breakout_volume_avancado,
+                verificar_squeeze_bollinger,
+                verificar_divergencia_rsi
+            ]
+            
+            for verificar_setup in setups_avancados:
+                try:
+                    if verificar_setup == verificar_divergencia_rsi:
+                        setup_info = verificar_setup(df)
+                    else:
+                        setup_info = verificar_setup(r, df)
+                        
+                    if setup_info:
+                        analise_single = {tf: dados}
+                        if ARSENAL_DISPONIVEL:
+                            if enviar_alerta_avancado_com_arsenal(par, analise_single, setup_info):
+                                sinais_encontrados.append(setup_info)
+                        else:
+                            if enviar_alerta_avancado(par, analise_single, setup_info):
+                                sinais_encontrados.append(setup_info)
+                            
+                except Exception as e:
+                    logging.warning(f"Erro em setup avançado: {e}")
+            
+            # Setups originais (PRESERVAR TODOS)
+            setups_originais = [
+                verificar_setup_alta_confluencia,
+                verificar_setup_rigoroso,
+                verificar_setup_rompimento,
+                verificar_setup_reversao_tecnica,
+                verificar_setup_intermediario,
+                verificar_setup_leve
+            ]
+            
+            for verificar_setup in setups_originais:
+                try:
+                    setup_info = verificar_setup(r, df)
+                    if setup_info:
+                        analise_single = {tf: dados}
+                        if ARSENAL_DISPONIVEL:
+                            if enviar_alerta_avancado_com_arsenal(par, analise_single, setup_info):
+                                sinais_encontrados.append(setup_info)
+                                break
+                        else:
+                            if enviar_alerta_avancado(par, analise_single, setup_info):
+                                sinais_encontrados.append(setup_info)
+                                break
+                except Exception as e:
+                    logging.warning(f"Erro em setup original: {e}")
+        
+        return sinais_encontrados
+        
+    except Exception as e:
+        logging.error(f"Erro na análise avançada de {par}: {e}")
+        return []
+
+# ===============================
+# === ESTATÍSTICAS
+# ===============================
+
+def salvar_estatisticas(par, timeframe, tendencia, forca, sinais_encontrados):
+    """Salva estatísticas de performance"""
+    try:
+        try:
+            with open(ARQUIVO_ESTATISTICAS, 'r') as f:
+                stats = json.load(f)
+        except FileNotFoundError:
+            stats = {"analises": [], "resumo": {}}
+        
+        nova_analise = {
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "par": par,
+            "timeframe": timeframe,
+            "tendencia": tendencia,
+            "forca": forca,
+            "sinais": sinais_encontrados
+        }
+        
+        stats["analises"].append(nova_analise)
+        
+        # Manter últimas 150 análises
+        if len(stats["analises"]) > 150:
+            stats["analises"] = stats["analises"][-150:]
+        
+        # Resumo 24h
+        agora = datetime.datetime.utcnow()
+        sinais_24h = 0
+        
+        for analise in stats["analises"]:
+            dt_analise = datetime.datetime.fromisoformat(analise["timestamp"])
+            if (agora - dt_analise).total_seconds() <= 86400 and analise["sinais"] > 0:
+                sinais_24h += 1
+        
+        stats["resumo"] = {
+            "ultima_atualizacao": agora.isoformat(),
+            "total_analises": len(stats["analises"]),
+            "sinais_24h": sinais_24h
+        }
+        
+        with open(ARQUIVO_ESTATISTICAS, 'w') as f:
+            json.dump(stats, f, indent=2)
+            
+    except Exception as e:
+        logging.error(f"Erro ao salvar estatísticas: {e}")
+
+def gerar_resumo_estatisticas():
+    """Resumo das estatísticas"""
+    try:
+        with open(ARQUIVO_ESTATISTICAS, 'r') as f:
+            stats = json.load(f)
+        
+        resumo = stats.get("resumo", {})
+        sinais_24h = resumo.get("sinais_24h", 0)
+        
+        return f"📊 Performance 24h: {sinais_24h} sinais detectados"
+    except:
+        return "📊 Coletando estatísticas..."
+
+# ===============================
+# === FUNÇÃO PRINCIPAL ENHANCED COM DIAGNÓSTICO (MODIFICADO)
+# ===============================
+
+def executar_scanner_avancado():
+    """Scanner principal avançado com arsenal opcional + DIAGNÓSTICO AUTOMÁTICO"""
+    try:
+        titulo = "🚀 SCANNER AVANÇADO ETH/BTC"
+        if ARSENAL_DISPONIVEL:
+            titulo += " - ENHANCED v2.1"
+            print(f"{titulo}")
+            print("🏦 Arsenal: VWAP + Contexto Macro + Explicações")
+        else:
+            titulo += " - BASE v2.1"
+            print(f"{titulo}")
+            print("📊 Sistema base preservado funcionando")
+        
+        print(f"⏰ Executado em: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        print(f"📊 Pares: {', '.join(PARES_ALVOS)}")
+        print(f"📈 Timeframes: {', '.join(TIMEFRAMES)}")
+        
+        # DIAGNÓSTICO AUTOMÁTICO E STATUS (NOVO)
+        print("\n🏥 VERIFICANDO SAÚDE DO SISTEMA...")
+        diagnosticar_arsenal()
+        enviar_status_sistema()
+        
+        # Inicializar exchange
+        exchange = ccxt.okx({'enableRateLimit': True, 'timeout': 30000})
+        
+        # Conectar com retry
+        for tentativa in range(3):
+            try:
+                exchange.load_markets()
+                break
+            except Exception as e:
+                if tentativa == 2:
+                    raise e
+                time.sleep(2)
+        
+        # Verificar sinais em aberto
+        print("🔍 Verificando sinais monitorados...")
+        sinais_atualizados = verificar_sinais_monitorados(exchange)
+        
+        # Analisar cada par
+        total_sinais = 0
+        relatorio_completo = []
+        
+        for par in PARES_ALVOS:
+            if par not in exchange.markets:
+                continue
+                
+            print(f"\n🎯 Iniciando análise avançada: {par}")
+            sinais = analisar_par_avancado(exchange, par)
+            total_sinais += len(sinais)
+            
+            # Coletar dados para relatório
+            try:
+                ticker = exchange.fetch_ticker(par)
+                preco = ticker['last']
+                
+                # RSI básico
+                ohlcv = exchange.fetch_ohlcv(par, '1h', limit=20)
+                df_temp = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+                rsi = RSIIndicator(df_temp['close'], 14).rsi().iloc[-1]
+                
+                relatorio_completo.append({
+                    'par': par,
+                    'preco': preco,
+                    'rsi': rsi if not pd.isna(rsi) else 0,
+                    'sinais': len(sinais)
+                })
+                
+            except Exception as e:
+                relatorio_completo.append({
+                    'par': par,
+                    'preco': 0,
+                    'rsi': 0,
+                    'sinais': len(sinais)
+                })
+            
+            # Salvar estatísticas para cada timeframe
+            try:
+                analise_tf = analisar_multiplos_timeframes(exchange, par)
+                for tf, dados in analise_tf.items():
+                    if dados.get('status') == 'ok':
+                        salvar_estatisticas(par, tf, dados['tendencia'], dados['forca'], len(sinais))
+            except:
+                pass
+            
+            time.sleep(1)
+        
+        print(f"\n✅ SCANNER AVANÇADO FINALIZADO")
+        print(f"📨 Total de sinais enviados: {total_sinais}")
+        
+        # Enviar relatório se não houver sinais
+        if total_sinais == 0:
+            enviar_relatorio_status_avancado(relatorio_completo)
+        
+        return True
+        
+    except Exception as e:
+        logging.error(f"Erro crítico no scanner avançado: {e}")
+        
+        # Alerta de erro com diagnóstico
+        if TOKEN != "dummy_token":
+            componentes_status = []
+            if VWAP_DISPONIVEL:
+                componentes_status.append("✅ VWAP")
+            else:
+                componentes_status.append("❌ VWAP")
+            
+            if MACRO_DISPONIVEL:
+                componentes_status.append("✅ Macro")
+            else:
+                componentes_status.append("❌ Macro")
+            
+            if EXPLICADOR_DISPONIVEL:
+                componentes_status.append("✅ Explicador")
+            else:
+                componentes_status.append("❌ Explicador")
+            
+            mensagem_erro = (
+                f"🚨 *ERRO SCANNER AVANÇADO*\n\n"
+                f"❌ {str(e)[:80]}...\n"
+                f"📊 Arsenal: {' | '.join(componentes_status)}\n"
+                f"⏰ {datetime.datetime.utcnow().strftime('%H:%M UTC')}\n\n"
+                f"🔧 Verificar logs para diagnóstico completo"
+            )
+            enviar_telegram(mensagem_erro)
+        
+        return False
+
+# ===============================
+# === EXECUÇÃO PRINCIPAL
+# ===============================
+
+if __name__ == "__main__":
+    titulo = "🎯 SCANNER ETH/BTC AVANÇADO v2.1"
+    
+    if ARSENAL_DISPONIVEL:
+        print(f"{titulo} - ENHANCED")
+        print("📋 Múltiplos timeframes + Arsenal institucional")
+        print("🏦 VWAP + Contexto Macro + Explicações")
+        print("⚡ Análise premium com diagnóstico automático\n")
+    else:
+        print(f"{titulo} - BASE")
+        print("📋 Múltiplos timeframes + Setups avançados")
+        print("🔍 Sistema base preservado funcionando")
+        print("⚡ Análise completa com diagnóstico transparente\n")
+    
+    sucesso = executar_scanner_avancado()
+    
+    if sucesso:
+        status_final = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE"
+        print(f"🎉 Scanner {status_final} executado com sucesso!")
+        exit(0)
+    else:
+        print("💥 Scanner avançado falhou!")
+        exit(1)]} {risco['nivel']}
+📡 Status: {status_detail}"""
+        
+        # ADICIONAR CONTEXTO VWAP (SE ARSENAL DISPONÍVEL)
+        if ARSENAL_DISPONIVEL and VWAP_DISPONIVEL:
+            try:
+                df = tf_principal['df']
+                vwap_diario = analisador_vwap.calcular_vwap_periodo(df, '1D')
+                vwap_semanal = analisador_vwap.calcular_vwap_periodo(df, '1S')
+                
+                analise_vwap = analisador_vwap.analisar_posicao_vwap(
+                    preco, 
+                    vwap_diario.iloc[-1], 
+                    vwap_semanal.iloc[-1]
+                )
+                
+                bias = analise_vwap.get('bias_institucional', 'NEUTRO')
+                dist_diaria = analise_vwap.get('distancia_diaria_pct', 0)
+                
+                mensagem += f"""
+
+🏦 CONTEXTO VWAP:
+• Bias Institucional: {bias}
+• Distância VWAP: {dist_diaria:+.1f}%
+• Nível VWAP: ${analise_vwap.get('vwap_diario', 0):,.2f}"""
+                
+            except Exception as e:
+                mensagem += f"\n\n⚠️ VWAP: Erro na análise ({str(e)[:50]}...)"
+                logging.warning(f"Erro contexto VWAP: {e}")
+        
+        # ADICIONAR CONTEXTO MACRO (SE ARSENAL DISPONÍVEL)
+        if ARSENAL_DISPONIVEL and MACRO_DISPONIVEL:
+            try:
+                analise_macro = analisador_macro.obter_score_risco_macro()
+                risco_macro = analise_macro.get('score_risco_total', 0)
+                
+                if risco_macro > 3:
+                    mensagem += f"""
+
+🌍 CONTEXTO MACRO:
+• Risk Score: {risco_macro:.1f}/10
+• Ajuste Posição: {analise_macro.get('ajuste_posicao', 1.0):.1f}x
+• {analise_macro.get('explicacao', '')[:60]}..."""
+                
+            except Exception as e:
+                mensagem += f"\n\n⚠️ MACRO: Erro na análise ({str(e)[:50]}...)"
+                logging.warning(f"Erro contexto macro: {e}")
+        
+        # Análise por timeframe (preservar sua lógica)
+        mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
+        for tf, dados in analise_tf.items():
+            if dados.get('status') == 'ok':
+                tendencia_emoji = {
+                    'alta_forte': '🚀',
+                    'alta': '📈', 
+                    'lateral': '➡️',
+                    'baixa': '📉',
+                    'baixa_forte': '💥'
+                }.get(dados['tendencia'], '❓')
+                
+                vol_emoji = {
+                    'alta': '🔥',
+                    'normal': '🟡',
+                    'baixa': '😴'
+                }.get(dados['volatilidade'], '❓')
+                
+                mensagem += (
+                    f"• {tf}: {tendencia_emoji} {dados['tendencia']} "
+                    f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
+                )
+        
+        # Indicadores atuais
+        r = tf_principal['df'].iloc[-1]
+        mensagem += (
+            f"\n*📊 INDICADORES ATUAIS:*\n"
+            f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
+            f"• MACD: {r['macd']:.4f} | Volume: {tf_principal['volume_ratio']:.1f}x\n"
+            f"• ATR: {r['atr']:.4f}\n"
+        )
+        
+        # Calcular alvos (preservar sua lógica)
+        atr = r['atr']
+        if par == 'BTC/USDT':
+            stop = round(preco - (atr * 1.2), 2)
+            alvo = round(preco + (atr * 2.5), 2)
+        else:
+            stop = round(preco - (atr * 1.5), 2)
+            alvo = round(preco + (atr * 3.0), 2)
+        
+        # Position sizing ajustado por macro
+        tamanho_base = 250  # Seu tamanho base
+        ajuste_posicao = 1.0
+        
+        if ARSENAL_DISPONIVEL and MACRO_DISPONIVEL:
+            try:
+                analise_macro = analisador_macro.obter_score_risco_macro()
+                ajuste_posicao = analise_macro.get('ajuste_posicao', 1.0)
+            except:
+                pass
+        
+        tamanho_final = tamanho_base * ajuste_posicao
+        
+        mensagem += f"""
+
+💰 RECOMENDAÇÃO:
+• Entry: ${preco:,.2f}
+• Stop: ${stop:,.2f}
+• Target: ${alvo:,.2f}
+• Posição: R$ {tamanho_final:,.0f}"""
+        
+        # Critérios de bonus
+        if criterios_bonus:
+            mensagem += "\n\n*🎁 BONUS CONFLUÊNCIA:*\n"
+            for criterio in criterios_bonus[:3]:
+                mensagem += f"{criterio}\n"
+        
+        # Contexto e detalhes
+        if 'timeframes' in setup_info:
+            mensagem += f"\n*📋 DETALHES:*\n{setup_info['timeframes']}\n"
+        
+        if 'detalhes' in setup_info:
+            mensagem += f"\n*📋 ESPECÍFICOS:*\n{setup_info['detalhes']}\n"
+        
+        # Contexto fundamentais (preservar)
+        contexto_macro = obter_dados_fundamentais()
+        mensagem += f"\n{contexto_macro}\n"
+        
+        # Timestamp (preservar)
+        agora_utc = datetime.datetime.utcnow()
+        agora_br = agora_utc - datetime.timedelta(hours=3)
+        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
+        
+        mensagem += f"\n🕘 {timestamp}"
+        
+        # STATUS FINAL OBRIGATÓRIO
+        if ARSENAL_DISPONIVEL:
+            mensagem += "\n🏦 Sistema Enhanced - Arsenal Completo"
+        else:
+            erros_principais = []
+            if not VWAP_DISPONIVEL:
+                erros_principais.append("VWAP")
+            if not MACRO_DISPONIVEL:
+                erros_principais.append("Macro")
+            if not EXPLICADOR_DISPONIVEL:
+                erros_principais.append("Explicador")
+            
+            mensagem += f"\n⚠️ Sistema Base - Sem: {', '.join(erros_principais)}"
+        
+        # Enviar alerta
+        if enviar_telegram(mensagem):
+            status_log = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE ONLY"
+            print(f"✅ ALERTA {status_log}: {par} - {setup_info['setup']} (score: {score})")
+            registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
+            return True
+        
+        return False
+        
+    except Exception as e:
+        logging.error(f"Erro ao enviar alerta enhanced: {e}")
+        return False
+
+# SUA FUNÇÃO ORIGINAL DE ALERTA (PRESERVADA COMO FALLBACK)
+def enviar_alerta_avancado(par, analise_tf, setup_info):
+    """Alerta com análise de múltiplos timeframes (sua versão original + status)"""
+    try:
+        # Dados do timeframe principal (1h)
+        tf_principal = analise_tf.get('1h', {})
+        if tf_principal.get('status') != 'ok':
+            return False
+        
+        preco = tf_principal['preco']
+        
+        # Score avançado
+        score, criterios_bonus = calcular_score_avancado(analise_tf, setup_info)
+        score_visual = gerar_score_visual(score)
+        risco = categorizar_risco(score)
+        
+        # Calcular alvos
+        df_1h = tf_principal['df']
+        atr = df_1h['atr'].iloc[-1]
+        
+        if par == 'BTC/USDT':
+            stop = round(preco - (atr * 1.2), 2)
+            alvo = round(preco + (atr * 2.5), 2)
+        else:
+            stop = round(preco - (atr * 1.5), 2)
+            alvo = round(preco + (atr * 3.0), 2)
+        
+        # Timestamp
+        agora_utc = datetime.datetime.utcnow()
+        agora_br = agora_utc - datetime.timedelta(hours=3)
+        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
+        
+        # Link TradingView
+        symbol_tv = par.replace("/", "")
+        link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_tv}"
+        
+        # Dados fundamentais
+        contexto_macro = obter_dados_fundamentais()
+        
+        # STATUS OBRIGATÓRIO NO FALLBACK TAMBÉM
+        status_indicator = "📊 BASE" if not ARSENAL_DISPONIVEL else "🏦 ENHANCED"
+        
+        # Construir mensagem avançada
+        mensagem = f"""{status_indicator} | {setup_info['emoji']} {setup_info['setup']}
+{setup_info['prioridade']}
+
+📊 Par: `{par}`
+💰 Preço: `${preco:,.2f}`
+🎯 Alvo: `${alvo:,.2f}`
+🛑 Stop: `${stop:,.2f}`
+
+📊 Score: {score_visual}
+🎲 Risco: {risco['emoji'
     np.seterr(all='ignore')  # Suprimir warnings NumPy
 except:
     pass
@@ -699,1181 +1877,3 @@ def verificar_breakout_volume_avancado(r, df):
             return None
         
         # Resistência dos últimos 15 candles
-        resistencia = df['high'].iloc[-15:-1].max()
-        
-        # Contar toques na resistência
-        touches = ((df['high'].iloc[-15:-1] >= resistencia * 0.995) & 
-                  (df['high'].iloc[-15:-1] <= resistencia * 1.005)).sum()
-        
-        # Critérios
-        resistencia_forte = touches >= 3
-        breakout = r['close'] > resistencia * 1.002
-        volume_explosivo = df['volume'].iloc[-1] > df['volume'].mean() * 3.0
-        rsi_saudavel = 40 < r['rsi'] < 75
-        macd_confirmando = r['macd'] > r['macd_signal']
-        
-        if resistencia_forte and breakout and volume_explosivo and rsi_saudavel and macd_confirmando:
-            return {
-                'setup': '💥 BREAKOUT VOLUME EXTREMO',
-                'prioridade': '🔴 ALTA PROBABILIDADE',
-                'emoji': '💥',
-                'id': 'breakout_extremo',
-                'score_base': 9.0,
-                'detalhes': f"Resistência ${resistencia:.2f} testada {touches}x"
-            }
-            
-    except Exception as e:
-        logging.warning(f"Erro no breakout avançado: {e}")
-    
-    return None
-
-# ===============================
-# === SETUPS ORIGINAIS
-# ===============================
-
-def verificar_setup_rigoroso(r, df):
-    try:
-        campos = ['rsi', 'ema9', 'ema21', 'macd', 'macd_signal', 'adx']
-        if any(pd.isna(r[campo]) for campo in campos):
-            return None
-        
-        condicoes = [
-            r['rsi'] < 40,
-            df['ema9'].iloc[-2] < df['ema21'].iloc[-2] and r['ema9'] > r['ema21'],
-            r['macd'] > r['macd_signal'],
-            r['adx'] > 20,
-            df['volume'].iloc[-1] > df['volume'].mean() * 1.5,
-            df['supertrend'].iloc[-1] == True
-        ]
-        
-        if all(condicoes):
-            return {
-                'setup': '🎯 SETUP RIGOROSO', 
-                'prioridade': '🟠 PRIORIDADE ALTA', 
-                'emoji': '🎯',
-                'id': 'setup_rigoroso'
-            }
-    except:
-        pass
-    return None
-
-def verificar_setup_alta_confluencia(r, df):
-    try:
-        condicoes = [
-            r['rsi'] < 40,
-            df['ema9'].iloc[-2] < df['ema21'].iloc[-2] and r['ema9'] > r['ema21'],
-            r['macd'] > r['macd_signal'],
-            r['atr'] > df['atr'].mean(),
-            r['obv'] > df['obv'].mean(),
-            r['adx'] > 20,
-            r['close'] > r['ema200'],
-            df['volume'].iloc[-1] > df['volume'].mean(),
-            df['supertrend'].iloc[-1],
-            detectar_candle_forte(df)
-        ]
-        
-        if sum(condicoes) >= 6:
-            return {
-                'setup': '🔥 SETUP ALTA CONFLUÊNCIA',
-                'prioridade': '🟥 PRIORIDADE MÁXIMA',
-                'emoji': '🔥',
-                'id': 'setup_alta_confluencia'
-            }
-    except:
-        pass
-    return None
-
-def verificar_setup_rompimento(r, df):
-    if len(df) < 10:
-        return None
-    try:
-        resistencia = df['high'].iloc[-10:-1].max()
-        if pd.isna(resistencia):
-            return None
-            
-        condicoes = [
-            r['close'] > resistencia,
-            df['volume'].iloc[-1] > df['volume'].mean(),
-            r['rsi'] > 55 and df['rsi'].iloc[-1] > df['rsi'].iloc[-2],
-            df['supertrend'].iloc[-1]
-        ]
-        
-        if all(condicoes):
-            return {
-                'setup': '🚀 SETUP ROMPIMENTO',
-                'prioridade': '🟩 ALTA OPORTUNIDADE',
-                'emoji': '🚀',
-                'id': 'setup_rompimento'
-            }
-    except:
-        pass
-    return None
-
-def verificar_setup_reversao_tecnica(r, df):
-    if len(df) < 3:
-        return None
-    try:
-        condicoes = [
-            r['obv'] > df['obv'].mean(),
-            df['close'].iloc[-2] > df['open'].iloc[-2],
-            df['close'].iloc[-1] > df['close'].iloc[-2],
-            detectar_martelo(df) or detectar_engolfo_alta(df),
-            df['rsi'].iloc[-1] > df['rsi'].iloc[-2]
-        ]
-        
-        if all(condicoes):
-            return {
-                'setup': '🔁 SETUP REVERSÃO TÉCNICA',
-                'prioridade': '🟣 OPORTUNIDADE DE REVERSÃO',
-                'emoji': '🔁',
-                'id': 'setup_reversao_tecnica'
-            }
-    except:
-        pass
-    return None
-
-def verificar_setup_intermediario(r, df):
-    try:
-        condicoes = [
-            r['rsi'] < 50,
-            r['ema9'] > r['ema21'],
-            r['macd'] > r['macd_signal'],
-            r['adx'] > 15,
-            df['volume'].iloc[-1] > df['volume'].mean()
-        ]
-        
-        if all(condicoes):
-            return {
-                'setup': '⚙️ SETUP INTERMEDIÁRIO',
-                'prioridade': '🟡 PRIORIDADE MÉDIA-ALTA',
-                'emoji': '⚙️',
-                'id': 'setup_intermediario'
-            }
-    except:
-        pass
-    return None
-
-def verificar_setup_leve(r, df):
-    try:
-        condicoes = [
-            r['ema9'] > r['ema21'],
-            r['adx'] > 15,
-            df['volume'].iloc[-1] > df['volume'].mean()
-        ]
-        
-        if sum(condicoes) >= 2:
-            return {
-                'setup': '🔹 SETUP LEVE',
-                'prioridade': '🔵 PRIORIDADE MÉDIA',
-                'emoji': '🔹',
-                'id': 'setup_leve'
-            }
-    except:
-        pass
-    return None
-
-# ===============================
-# === SISTEMA DE SCORE VISUAL
-# ===============================
-
-def gerar_score_visual(score):
-    """Representação visual do score"""
-    if score >= 9.0:
-        return "🟢🟢🟢🟢🟢 (Excelente)"
-    elif score >= 8.0:
-        return "🟢🟢🟢🟢🟡 (Muito Bom)"
-    elif score >= 7.0:
-        return "🟢🟢🟢🟡🟡 (Bom)"
-    elif score >= 6.0:
-        return "🟢🟢🟡🟡🟡 (Moderado)"
-    elif score >= 5.0:
-        return "🟢🟡🟡🟡🟡 (Fraco)"
-    else:
-        return "🟡🟡🟡⚫⚫ (Muito Fraco)"
-
-def categorizar_risco(score):
-    """Categorização de risco"""
-    if score >= 8.5:
-        return {"nivel": "BAIXO", "emoji": "🟢", "cor": "Verde"}
-    elif score >= 7.0:
-        return {"nivel": "MÉDIO", "emoji": "🟡", "cor": "Amarelo"}
-    elif score >= 5.5:
-        return {"nivel": "ALTO", "emoji": "🟠", "cor": "Laranja"}
-    else:
-        return {"nivel": "MUITO ALTO", "emoji": "🔴", "cor": "Vermelho"}
-
-def calcular_score_avancado(analise_tf, setup_info):
-    """Score avançado considerando múltiplos timeframes"""
-    try:
-        score_base = setup_info.get('score_base', 7.0)
-        bonus = 0
-        criterios = []
-        
-        # Bonus por confluência de timeframes
-        if len(analise_tf) > 1:
-            tendencias = [tf['tendencia'] for tf in analise_tf.values() if tf.get('status') == 'ok']
-            if len(set(tendencias)) == 1 and tendencias[0] in ['alta', 'alta_forte']:
-                bonus += 1.0
-                criterios.append("✅ Confluência entre timeframes")
-            else:
-                criterios.append("❌ Timeframes divergentes")
-        
-        # Bonus por força geral
-        forcas = [tf['forca'] for tf in analise_tf.values() if tf.get('status') == 'ok']
-        if forcas and min(forcas) >= 6:
-            bonus += 0.5
-            criterios.append("✅ Força consistente")
-        
-        # Bonus por volatilidade adequada
-        volatilidades = [tf['volatilidade'] for tf in analise_tf.values() if tf.get('status') == 'ok']
-        if 'normal' in volatilidades or 'alta' in volatilidades:
-            bonus += 0.3
-            criterios.append("✅ Volatilidade adequada")
-        
-        score_final = min(score_base + bonus, 10.0)
-        return score_final, criterios
-        
-    except Exception as e:
-        return 7.0, [f"Erro no score: {e}"]
-
-# ===============================
-# === GESTÃO DE SINAIS
-# ===============================
-
-def carregar_sinais_monitorados():
-    try:
-        with open(ARQUIVO_SINAIS_MONITORADOS, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-def salvar_sinais_monitorados(sinais):
-    with open(ARQUIVO_SINAIS_MONITORADOS, 'w') as f:
-        json.dump(sinais, f, indent=2)
-
-def registrar_sinal_monitorado(par, setup_id, preco_entrada, alvo, stop):
-    sinais = carregar_sinais_monitorados()
-    novo_sinal = {
-        "par": par,
-        "setup": setup_id,
-        "entrada": preco_entrada,
-        "alvo": alvo,
-        "stop": stop,
-        "timestamp": datetime.datetime.utcnow().isoformat(),
-        "status": "em_aberto"
-    }
-    sinais.append(novo_sinal)
-    salvar_sinais_monitorados(sinais)
-    print(f"📝 Sinal registrado: {par} - {setup_id}")
-
-def verificar_sinais_monitorados(exchange):
-    """Verifica sinais em aberto"""
-    sinais = carregar_sinais_monitorados()
-    sinais_atualizados = []
-    
-    for sinal in sinais:
-        if sinal['status'] != "em_aberto":
-            continue
-            
-        par = sinal['par']
-        try:
-            ticker = exchange.fetch_ticker(par)
-            preco_atual = ticker['last']
-        except Exception as e:
-            continue
-        
-        status_anterior = sinal['status']
-        
-        if preco_atual >= sinal['alvo']:
-            sinal['status'] = "🎯 Alvo atingido"
-            sinal['preco_final'] = preco_atual
-        elif preco_atual <= sinal['stop']:
-            sinal['status'] = "🛑 Stop atingido"
-            sinal['preco_final'] = preco_atual
-        else:
-            dt_alerta = datetime.datetime.fromisoformat(sinal['timestamp'])
-            tempo_passado = datetime.datetime.utcnow() - dt_alerta
-            if tempo_passado.total_seconds() >= 86400:
-                sinal['status'] = "⏰ Expirado (24h)"
-                sinal['preco_final'] = preco_atual
-        
-        if sinal['status'] != status_anterior:
-            sinal['atualizado_em'] = datetime.datetime.utcnow().isoformat()
-            sinais_atualizados.append(sinal)
-    
-    if sinais_atualizados:
-        salvar_sinais_monitorados(sinais)
-        for sinal in sinais_atualizados:
-            enviar_notificacao_fechamento(sinal)
-    
-    return sinais_atualizados
-
-def enviar_notificacao_fechamento(sinal):
-    """Notificação de fechamento"""
-    try:
-        dt_inicio = datetime.datetime.fromisoformat(sinal['timestamp'])
-        dt_fim = datetime.datetime.fromisoformat(sinal['atualizado_em'])
-        duracao = dt_fim - dt_inicio
-        horas = int(duracao.total_seconds() // 3600)
-        minutos = int((duracao.total_seconds() % 3600) // 60)
-        
-        resultado = "🎉 SUCESSO" if "Alvo" in sinal['status'] else "⚠️ STOP" if "Stop" in sinal['status'] else "⏰ EXPIRADO"
-        
-        mensagem = (
-            f"📊 *SINAL FINALIZADO*\n\n"
-            f"{resultado}\n\n"
-            f"📊 Par: `{sinal['par']}`\n"
-            f"📋 Setup: {sinal['setup']}\n"
-            f"💰 Entrada: `${sinal['entrada']:.2f}`\n"
-            f"🏁 Saída: `${sinal.get('preco_final', 0):.2f}`\n"
-            f"⏱️ Duração: {horas}h {minutos}min\n"
-            f"📍 Status: {sinal['status']}"
-        )
-        
-        enviar_telegram(mensagem)
-    except Exception as e:
-        logging.error(f"Erro notificação fechamento: {e}")
-
-# ===============================
-# === DADOS FUNDAMENTAIS
-# ===============================
-
-def abreviar_valor(valor):
-    if valor >= 1_000_000_000_000:
-        return f"${valor/1_000_000_000_000:.2f}T"
-    elif valor >= 1_000_000_000:
-        return f"${valor/1_000_000_000:.2f}B"
-    elif valor >= 1_000_000:
-        return f"${valor/1_000_000:.2f}M"
-    else:
-        return f"${valor:,.2f}"
-
-def obter_dados_fundamentais():
-    try:
-        total = requests.get("https://api.coingecko.com/api/v3/global", timeout=5).json()
-        market_data = total.get('data', {})
-        
-        market_cap = market_data.get('total_market_cap', {}).get('usd')
-        market_cap_change = market_data.get('market_cap_change_percentage_24h_usd', 0)
-        btc_dominance = market_data.get('market_cap_percentage', {}).get('btc')
-        
-        if market_cap is None or btc_dominance is None:
-            return "*Dados fundamentais indisponíveis*"
-        
-        emoji_cap = "📈" if market_cap_change >= 0 else "📉"
-        
-        # Contexto de mercado
-        contexto = ""
-        if market_cap_change < -3:
-            contexto = "\n🔴 *Correção em curso*"
-        elif market_cap_change > 3:
-            contexto = "\n🟢 *Rally em andamento*"
-        
-        # Fear & Greed Index
-        try:
-            fg_response = requests.get("https://api.alternative.me/fng/?limit=1", timeout=3).json()
-            indice = fg_response['data'][0]
-            valor_fg = int(indice['value'])
-            
-            if valor_fg >= 75:
-                emoji_fg = "🔥"
-            elif valor_fg >= 55:
-                emoji_fg = "😊"
-            elif valor_fg >= 45:
-                emoji_fg = "😐"
-            elif valor_fg >= 25:
-                emoji_fg = "😰"
-            else:
-                emoji_fg = "🥶"
-                
-            fear_greed = f"{valor_fg} {emoji_fg} ({indice['value_classification']})"
-        except:
-            fear_greed = "Indisponível"
-        
-        return (
-            f"*🌍 CONTEXTO MACRO:*\n"
-            f"• Cap. Total: {abreviar_valor(market_cap)} {emoji_cap} ({market_cap_change:+.1f}%)\n"
-            f"• Domínio BTC: {btc_dominance:.1f}%\n"
-            f"• Fear & Greed: {fear_greed}"
-            + contexto
-        )
-    
-    except Exception as e:
-        return "*Dados macro indisponíveis*"
-
-# ===============================
-# === COMUNICAÇÃO TELEGRAM
-# ===============================
-
-def pode_enviar_alerta(par, setup):
-    agora = datetime.datetime.utcnow()
-    chave = f"{par}_{setup}"
-    
-    if chave in alertas_enviados:
-        delta = (agora - alertas_enviados[chave]).total_seconds()
-        if delta < TEMPO_REENVIO:
-            return False
-    
-    alertas_enviados[chave] = agora
-    return True
-
-def enviar_telegram(mensagem):
-    if not TOKEN or TOKEN == "dummy_token":
-        print(f"[TELEGRAM SIMULADO] {mensagem}")
-        return True
-    
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": mensagem,
-        "parse_mode": "Markdown",
-        "disable_web_page_preview": True
-    }
-    
-    try:
-        response = requests.post(url, data=payload, timeout=10)
-        return response.status_code == 200
-    except:
-        return False
-
-# ===============================
-# === ALERTAS COM DIAGNÓSTICO (MODIFICADO)
-# ===============================
-
-def enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_info):
-    """Alerta com análise de múltiplos timeframes + arsenal institucional + DIAGNÓSTICO"""
-    try:
-        # Dados do timeframe principal (1h)
-        tf_principal = analise_tf.get('1h', {})
-        if tf_principal.get('status') != 'ok':
-            return False
-        
-        preco = tf_principal['preco']
-        
-        # Score avançado
-        score, criterios_bonus = calcular_score_avancado(analise_tf, setup_info)
-        score_visual = gerar_score_visual(score)
-        risco = categorizar_risco(score)
-        
-        # Calcular alvos
-        df_1h = tf_principal['df']
-        atr = df_1h['atr'].iloc[-1]
-        
-        if par == 'BTC/USDT':
-            stop = round(preco - (atr * 1.2), 2)
-            alvo = round(preco + (atr * 2.5), 2)
-        else:
-            stop = round(preco - (atr * 1.5), 2)
-            alvo = round(preco + (atr * 3.0), 2)
-        
-        # Timestamp
-        agora_utc = datetime.datetime.utcnow()
-        agora_br = agora_utc - datetime.timedelta(hours=3)
-        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
-        
-        # Link TradingView
-        symbol_tv = par.replace("/", "")
-        link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_tv}"
-        
-        # Dados fundamentais
-        contexto_macro = obter_dados_fundamentais()
-        
-        # STATUS OBRIGATÓRIO NO FALLBACK TAMBÉM
-        status_indicator = "📊 BASE" if not ARSENAL_DISPONIVEL else "🏦 ENHANCED"
-        
-        # Construir mensagem avançada
-        mensagem = f"""{status_indicator} | {setup_info['emoji']} {setup_info['setup']}
-{setup_info['prioridade']}
-
-📊 Par: `{par}`
-💰 Preço: `${preco:,.2f}`
-🎯 Alvo: `${alvo:,.2f}`
-🛑 Stop: `${stop:,.2f}`
-
-📊 Score: {score_visual}
-🎲 Risco: {risco['emoji']} {risco['nivel']}"""
-        
-        # Análise por timeframe
-        mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
-        for tf, dados in analise_tf.items():
-            if dados.get('status') == 'ok':
-                tendencia_emoji = {
-                    'alta_forte': '🚀',
-                    'alta': '📈', 
-                    'lateral': '➡️',
-                    'baixa': '📉',
-                    'baixa_forte': '💥'
-                }.get(dados['tendencia'], '❓')
-                
-                vol_emoji = {
-                    'alta': '🔥',
-                    'normal': '🟡',
-                    'baixa': '😴'
-                }.get(dados['volatilidade'], '❓')
-                
-                mensagem += (
-                    f"• {tf}: {tendencia_emoji} {dados['tendencia']} "
-                    f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
-                )
-        
-        # Indicadores atuais
-        r = tf_principal['df'].iloc[-1]
-        mensagem += (
-            f"\n*📊 INDICADORES ATUAIS:*\n"
-            f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
-            f"• MACD: {r['macd']:.4f} | Volume: {tf_principal['volume_ratio']:.1f}x\n"
-            f"• ATR: {r['atr']:.4f}\n\n"
-        )
-        
-        # Critérios de bonus
-        if criterios_bonus:
-            mensagem += "*🎁 BONUS CONFLUÊNCIA:*\n"
-            for criterio in criterios_bonus[:3]:
-                mensagem += f"{criterio}\n"
-            mensagem += "\n"
-        
-        # Contexto e detalhes
-        if 'timeframes' in setup_info:
-            mensagem += f"*📋 DETALHES:*\n{setup_info['timeframes']}\n\n"
-        
-        if 'detalhes' in setup_info:
-            mensagem += f"*📋 ESPECÍFICOS:*\n{setup_info['detalhes']}\n\n"
-        
-        mensagem += f"{contexto_macro}\n\n"
-        mensagem += f"🕘 {timestamp}\n"
-        mensagem += f"📉 [TradingView]({link_tv})\n\n"
-        
-        # Recomendação baseada no score
-        if score >= 8.5:
-            explicacao = (
-                "*🎯 RECOMENDAÇÃO:*\n"
-                "Setup de alta qualidade com múltiplas confirmações. "
-                "Confluência entre timeframes detectada."
-            )
-        elif score >= 7.0:
-            explicacao = (
-                "*🎯 RECOMENDAÇÃO:*\n"
-                "Setup sólido com boa base técnica. "
-                "Gestão de risco recomendada."
-            )
-        else:
-            explicacao = (
-                "*🎯 RECOMENDAÇÃO:*\n"
-                "Setup de qualidade moderada. "
-                "Aguardar mais confirmações pode ser prudente."
-            )
-        
-        mensagem += explicacao
-        
-        # Enviar alerta
-        if pode_enviar_alerta(par, setup_info['setup']):
-            if enviar_telegram(mensagem):
-                status_log = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE"
-                print(f"✅ ALERTA {status_log}: {par} - {setup_info['setup']} (score: {score})")
-                registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
-                return True
-        
-        return False
-        
-    except Exception as e:
-        logging.error(f"Erro ao enviar alerta avançado: {e}")
-        return False
-
-def enviar_relatorio_status_avancado(relatorio):
-    """Relatório de status avançado com diagnóstico"""
-    try:
-        agora = datetime.datetime.utcnow().strftime('%H:%M UTC')
-        
-        # Sinais monitorados
-        sinais = carregar_sinais_monitorados()
-        sinais_abertos = len([s for s in sinais if s['status'] == 'em_aberto'])
-        
-        # TÍTULO COM STATUS DO ARSENAL
-        if ARSENAL_DISPONIVEL:
-            titulo = "🏦 Scanner Enhanced ETH/BTC"
-            subtitulo = "📊 RELATÓRIO SISTEMA COMPLETO"
-        else:
-            titulo = "📊 Scanner Base ETH/BTC"
-            subtitulo = "⚠️ RELATÓRIO MODO REDUZIDO"
-        
-        mensagem = (
-            f"{titulo}\n"
-            f"{subtitulo}\n\n"
-            f"⏰ Executado às {agora}\n"
-            f"🔍 Análise: Timeframes 1h + 4h\n"
-            f"📈 Resultado: Aguardando oportunidades\n"
-            f"📝 Sinais ativos: {sinais_abertos}\n\n"
-        )
-        
-        # STATUS DO ARSENAL
-        if not ARSENAL_DISPONIVEL:
-            mensagem += "*⚠️ STATUS ARSENAL:*\n"
-            if not VWAP_DISPONIVEL:
-                mensagem += f"❌ VWAP: {VWAP_ERRO[:50]}...\n"
-            if not MACRO_DISPONIVEL:
-                mensagem += f"❌ Macro: {MACRO_ERRO[:50]}...\n"
-            if not EXPLICADOR_DISPONIVEL:
-                mensagem += f"❌ Explicador: {EXPLICADOR_ERRO[:50]}...\n"
-            mensagem += "\n"
-        
-        # Status por par
-        mensagem += "*💰 ANÁLISE DETALHADA:*\n"
-        for item in relatorio:
-            par = item['par']
-            preco = item['preco']
-            rsi = item['rsi']
-            
-            # Análise do RSI
-            if rsi < 25:
-                rsi_status = "🔥 Oversold extremo"
-            elif rsi < 35:
-                rsi_status = "🟠 Oversold"
-            elif rsi > 75:
-                rsi_status = "🔴 Overbought"
-            elif rsi > 65:
-                rsi_status = "🟡 Overbought leve"
-            else:
-                rsi_status = "🟢 Neutro"
-            
-            mensagem += f"• {par}: ${preco:,.2f}\n"
-            mensagem += f"  RSI: {rsi:.1f} ({rsi_status})\n"
-        
-        # Setups monitorados
-        mensagem += (
-            f"\n*🔍 SETUPS MONITORADOS:*\n"
-            f"• Confluência Timeframes (1h+4h)\n"
-            f"• Bollinger Squeeze (explosão)\n"
-            f"• Divergências RSI\n"
-            f"• Breakouts com Volume\n"
-            f"• + 6 setups originais\n\n"
-            f"⏰ Próxima análise: 15 minutos\n"
-        )
-        
-        if ARSENAL_DISPONIVEL:
-            mensagem += "🏦 Scanner Enhanced ativo"
-        else:
-            mensagem += "📊 Scanner base ativo - Funcionalidades reduzidas"
-        
-        if enviar_telegram(mensagem):
-            print("✅ Relatório avançado enviado")
-        else:
-            print("❌ Falha no envio do relatório")
-            
-    except Exception as e:
-        logging.error(f"Erro no relatório avançado: {e}")
-
-# ===============================
-# === ANÁLISE PRINCIPAL AVANÇADA (PRESERVAR + ARSENAL)
-# ===============================
-
-def analisar_par_avancado(exchange, par):
-    """Análise avançada com múltiplos timeframes + arsenal opcional"""
-    try:
-        print(f"🔍 Análise avançada de {par}...")
-        
-        # SUA ANÁLISE ATUAL (PRESERVAR 100%)
-        analise_tf = analisar_multiplos_timeframes(exchange, par)
-        
-        # Verificar dados válidos
-        dados_validos = any(tf.get('status') == 'ok' for tf in analise_tf.values())
-        if not dados_validos:
-            print(f"⚠️ Dados insuficientes para {par}")
-            return []
-        
-        sinais_encontrados = []
-        
-        # Setup especial: Confluência entre timeframes (PRESERVAR)
-        setup_confluencia = verificar_confluencia_timeframes(analise_tf, par)
-        if setup_confluencia:
-            if ARSENAL_DISPONIVEL:
-                if enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_confluencia):
-                    sinais_encontrados.append(setup_confluencia)
-            else:
-                # FALLBACK: Seu sistema atual
-                if enviar_alerta_avancado(par, analise_tf, setup_confluencia):
-                    sinais_encontrados.append(setup_confluencia)
-        
-        # Analisar setups em cada timeframe (PRESERVAR)
-        for tf, dados in analise_tf.items():
-            if dados.get('status') != 'ok':
-                continue
-                
-            df = dados['df']
-            r = df.iloc[-1]
-            
-            # Setups avançados (PRESERVAR TODOS)
-            setups_avancados = [
-                verificar_breakout_volume_avancado,
-                verificar_squeeze_bollinger,
-                verificar_divergencia_rsi
-            ]
-            
-            for verificar_setup in setups_avancados:
-                try:
-                    if verificar_setup == verificar_divergencia_rsi:
-                        setup_info = verificar_setup(df)
-                    else:
-                        setup_info = verificar_setup(r, df)
-                        
-                    if setup_info:
-                        analise_single = {tf: dados}
-                        if ARSENAL_DISPONIVEL:
-                            if enviar_alerta_avancado_com_arsenal(par, analise_single, setup_info):
-                                sinais_encontrados.append(setup_info)
-                        else:
-                            if enviar_alerta_avancado(par, analise_single, setup_info):
-                                sinais_encontrados.append(setup_info)
-                            
-                except Exception as e:
-                    logging.warning(f"Erro em setup avançado: {e}")
-            
-            # Setups originais (PRESERVAR TODOS)
-            setups_originais = [
-                verificar_setup_alta_confluencia,
-                verificar_setup_rigoroso,
-                verificar_setup_rompimento,
-                verificar_setup_reversao_tecnica,
-                verificar_setup_intermediario,
-                verificar_setup_leve
-            ]
-            
-            for verificar_setup in setups_originais:
-                try:
-                    setup_info = verificar_setup(r, df)
-                    if setup_info:
-                        analise_single = {tf: dados}
-                        if ARSENAL_DISPONIVEL:
-                            if enviar_alerta_avancado_com_arsenal(par, analise_single, setup_info):
-                                sinais_encontrados.append(setup_info)
-                                break
-                        else:
-                            if enviar_alerta_avancado(par, analise_single, setup_info):
-                                sinais_encontrados.append(setup_info)
-                                break
-                except Exception as e:
-                    logging.warning(f"Erro em setup original: {e}")
-        
-        return sinais_encontrados
-        
-    except Exception as e:
-        logging.error(f"Erro na análise avançada de {par}: {e}")
-        return []
-
-# ===============================
-# === ESTATÍSTICAS
-# ===============================
-
-def salvar_estatisticas(par, timeframe, tendencia, forca, sinais_encontrados):
-    """Salva estatísticas de performance"""
-    try:
-        try:
-            with open(ARQUIVO_ESTATISTICAS, 'r') as f:
-                stats = json.load(f)
-        except FileNotFoundError:
-            stats = {"analises": [], "resumo": {}}
-        
-        nova_analise = {
-            "timestamp": datetime.datetime.utcnow().isoformat(),
-            "par": par,
-            "timeframe": timeframe,
-            "tendencia": tendencia,
-            "forca": forca,
-            "sinais": sinais_encontrados
-        }
-        
-        stats["analises"].append(nova_analise)
-        
-        # Manter últimas 150 análises
-        if len(stats["analises"]) > 150:
-            stats["analises"] = stats["analises"][-150:]
-        
-        # Resumo 24h
-        agora = datetime.datetime.utcnow()
-        sinais_24h = 0
-        
-        for analise in stats["analises"]:
-            dt_analise = datetime.datetime.fromisoformat(analise["timestamp"])
-            if (agora - dt_analise).total_seconds() <= 86400 and analise["sinais"] > 0:
-                sinais_24h += 1
-        
-        stats["resumo"] = {
-            "ultima_atualizacao": agora.isoformat(),
-            "total_analises": len(stats["analises"]),
-            "sinais_24h": sinais_24h
-        }
-        
-        with open(ARQUIVO_ESTATISTICAS, 'w') as f:
-            json.dump(stats, f, indent=2)
-            
-    except Exception as e:
-        logging.error(f"Erro ao salvar estatísticas: {e}")
-
-def gerar_resumo_estatisticas():
-    """Resumo das estatísticas"""
-    try:
-        with open(ARQUIVO_ESTATISTICAS, 'r') as f:
-            stats = json.load(f)
-        
-        resumo = stats.get("resumo", {})
-        sinais_24h = resumo.get("sinais_24h", 0)
-        
-        return f"📊 Performance 24h: {sinais_24h} sinais detectados"
-    except:
-        return "📊 Coletando estatísticas..."
-
-# ===============================
-# === FUNÇÃO PRINCIPAL ENHANCED COM DIAGNÓSTICO (MODIFICADO)
-# ===============================
-
-def executar_scanner_avancado():
-    """Scanner principal avançado com arsenal opcional + DIAGNÓSTICO AUTOMÁTICO"""
-    try:
-        titulo = "🚀 SCANNER AVANÇADO ETH/BTC"
-        if ARSENAL_DISPONIVEL:
-            titulo += " - ENHANCED v2.1"
-            print(f"{titulo}")
-            print("🏦 Arsenal: VWAP + Contexto Macro + Explicações")
-        else:
-            titulo += " - BASE v2.1"
-            print(f"{titulo}")
-            print("📊 Sistema base preservado funcionando")
-        
-        print(f"⏰ Executado em: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-        print(f"📊 Pares: {', '.join(PARES_ALVOS)}")
-        print(f"📈 Timeframes: {', '.join(TIMEFRAMES)}")
-        
-        # DIAGNÓSTICO AUTOMÁTICO E STATUS (NOVO)
-        print("\n🏥 VERIFICANDO SAÚDE DO SISTEMA...")
-        diagnosticar_arsenal()
-        enviar_status_sistema()
-        
-        # Inicializar exchange
-        exchange = ccxt.okx({'enableRateLimit': True, 'timeout': 30000})
-        
-        # Conectar com retry
-        for tentativa in range(3):
-            try:
-                exchange.load_markets()
-                break
-            except Exception as e:
-                if tentativa == 2:
-                    raise e
-                time.sleep(2)
-        
-        # Verificar sinais em aberto
-        print("🔍 Verificando sinais monitorados...")
-        sinais_atualizados = verificar_sinais_monitorados(exchange)
-        
-        # Analisar cada par
-        total_sinais = 0
-        relatorio_completo = []
-        
-        for par in PARES_ALVOS:
-            if par not in exchange.markets:
-                continue
-                
-            print(f"\n🎯 Iniciando análise avançada: {par}")
-            sinais = analisar_par_avancado(exchange, par)
-            total_sinais += len(sinais)
-            
-            # Coletar dados para relatório
-            try:
-                ticker = exchange.fetch_ticker(par)
-                preco = ticker['last']
-                
-                # RSI básico
-                ohlcv = exchange.fetch_ohlcv(par, '1h', limit=20)
-                df_temp = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-                rsi = RSIIndicator(df_temp['close'], 14).rsi().iloc[-1]
-                
-                relatorio_completo.append({
-                    'par': par,
-                    'preco': preco,
-                    'rsi': rsi if not pd.isna(rsi) else 0,
-                    'sinais': len(sinais)
-                })
-                
-            except Exception as e:
-                relatorio_completo.append({
-                    'par': par,
-                    'preco': 0,
-                    'rsi': 0,
-                    'sinais': len(sinais)
-                })
-            
-            # Salvar estatísticas para cada timeframe
-            try:
-                analise_tf = analisar_multiplos_timeframes(exchange, par)
-                for tf, dados in analise_tf.items():
-                    if dados.get('status') == 'ok':
-                        salvar_estatisticas(par, tf, dados['tendencia'], dados['forca'], len(sinais))
-            except:
-                pass
-            
-            time.sleep(1)
-        
-        print(f"\n✅ SCANNER AVANÇADO FINALIZADO")
-        print(f"📨 Total de sinais enviados: {total_sinais}")
-        
-        # Enviar relatório se não houver sinais
-        if total_sinais == 0:
-            enviar_relatorio_status_avancado(relatorio_completo)
-        
-        return True
-        
-    except Exception as e:
-        logging.error(f"Erro crítico no scanner avançado: {e}")
-        
-        # Alerta de erro com diagnóstico
-        if TOKEN != "dummy_token":
-            componentes_status = []
-            if VWAP_DISPONIVEL:
-                componentes_status.append("✅ VWAP")
-            else:
-                componentes_status.append("❌ VWAP")
-            
-            if MACRO_DISPONIVEL:
-                componentes_status.append("✅ Macro")
-            else:
-                componentes_status.append("❌ Macro")
-            
-            if EXPLICADOR_DISPONIVEL:
-                componentes_status.append("✅ Explicador")
-            else:
-                componentes_status.append("❌ Explicador")
-            
-            mensagem_erro = (
-                f"🚨 *ERRO SCANNER AVANÇADO*\n\n"
-                f"❌ {str(e)[:80]}...\n"
-                f"📊 Arsenal: {' | '.join(componentes_status)}\n"
-                f"⏰ {datetime.datetime.utcnow().strftime('%H:%M UTC')}\n\n"
-                f"🔧 Verificar logs para diagnóstico completo"
-            )
-            enviar_telegram(mensagem_erro)
-        
-        return False
-
-# ===============================
-# === EXECUÇÃO PRINCIPAL
-# ===============================
-
-if __name__ == "__main__":
-    titulo = "🎯 SCANNER ETH/BTC AVANÇADO v2.1"
-    
-    if ARSENAL_DISPONIVEL:
-        print(f"{titulo} - ENHANCED")
-        print("📋 Múltiplos timeframes + Arsenal institucional")
-        print("🏦 VWAP + Contexto Macro + Explicações")
-        print("⚡ Análise premium com diagnóstico automático\n")
-    else:
-        print(f"{titulo} - BASE")
-        print("📋 Múltiplos timeframes + Setups avançados")
-        print("🔍 Sistema base preservado funcionando")
-        print("⚡ Análise completa com diagnóstico transparente\n")
-    
-    sucesso = executar_scanner_avancado()
-    
-    if sucesso:
-        status_final = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE"
-        print(f"🎉 Scanner {status_final} executado com sucesso!")
-        exit(0)
-    else:
-        print("💥 Scanner avançado falhou!")
-        exit(1)(score)
-        
-        # Usar sua lógica atual de controle
-        if not pode_enviar_alerta(par, setup_info.get('id', '')):
-            return False
-        
-        # INDICADOR DE STATUS OBRIGATÓRIO
-        if ARSENAL_DISPONIVEL:
-            status_indicator = "🏦 ENHANCED"
-            status_detail = "Sistema completo ativo"
-        else:
-            status_indicator = "⚠️ BASE ONLY"
-            componentes_ok = sum([VWAP_DISPONIVEL, MACRO_DISPONIVEL, EXPLICADOR_DISPONIVEL])
-            status_detail = f"Arsenal parcial ({componentes_ok}/3)"
-        
-        # CONSTRUIR MENSAGEM BASE (com status obrigatório)
-        mensagem = f"""{status_indicator} | {setup_info['emoji']} SINAL - {par} ${preco:,.2f}
-
-{setup_info['setup']}
-{setup_info['prioridade']}
-
-📊 SCORE: {score:.1f}/10 {score_visual}
-🎲 Risco: {risco['emoji']} {risco['nivel']}
-📡 Status: {status_detail}"""
-        
-        # ADICIONAR CONTEXTO VWAP (SE ARSENAL DISPONÍVEL)
-        if ARSENAL_DISPONIVEL and VWAP_DISPONIVEL:
-            try:
-                df = tf_principal['df']
-                vwap_diario = analisador_vwap.calcular_vwap_periodo(df, '1D')
-                vwap_semanal = analisador_vwap.calcular_vwap_periodo(df, '1S')
-                
-                analise_vwap = analisador_vwap.analisar_posicao_vwap(
-                    preco, 
-                    vwap_diario.iloc[-1], 
-                    vwap_semanal.iloc[-1]
-                )
-                
-                bias = analise_vwap.get('bias_institucional', 'NEUTRO')
-                dist_diaria = analise_vwap.get('distancia_diaria_pct', 0)
-                
-                mensagem += f"""
-
-🏦 CONTEXTO VWAP:
-• Bias Institucional: {bias}
-• Distância VWAP: {dist_diaria:+.1f}%
-• Nível VWAP: ${analise_vwap.get('vwap_diario', 0):,.2f}"""
-                
-            except Exception as e:
-                mensagem += f"\n\n⚠️ VWAP: Erro na análise ({str(e)[:50]}...)"
-                logging.warning(f"Erro contexto VWAP: {e}")
-        
-        # ADICIONAR CONTEXTO MACRO (SE ARSENAL DISPONÍVEL)
-        if ARSENAL_DISPONIVEL and MACRO_DISPONIVEL:
-            try:
-                analise_macro = analisador_macro.obter_score_risco_macro()
-                risco_macro = analise_macro.get('score_risco_total', 0)
-                
-                if risco_macro > 3:
-                    mensagem += f"""
-
-🌍 CONTEXTO MACRO:
-• Risk Score: {risco_macro:.1f}/10
-• Ajuste Posição: {analise_macro.get('ajuste_posicao', 1.0):.1f}x
-• {analise_macro.get('explicacao', '')[:60]}..."""
-                
-            except Exception as e:
-                mensagem += f"\n\n⚠️ MACRO: Erro na análise ({str(e)[:50]}...)"
-                logging.warning(f"Erro contexto macro: {e}")
-        
-        # Análise por timeframe (preservar sua lógica)
-        mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
-        for tf, dados in analise_tf.items():
-            if dados.get('status') == 'ok':
-                tendencia_emoji = {
-                    'alta_forte': '🚀',
-                    'alta': '📈', 
-                    'lateral': '➡️',
-                    'baixa': '📉',
-                    'baixa_forte': '💥'
-                }.get(dados['tendencia'], '❓')
-                
-                vol_emoji = {
-                    'alta': '🔥',
-                    'normal': '🟡',
-                    'baixa': '😴'
-                }.get(dados['volatilidade'], '❓')
-                
-                mensagem += (
-                    f"• {tf}: {tendencia_emoji} {dados['tendencia']} "
-                    f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
-                )
-        
-        # Indicadores atuais
-        r = tf_principal['df'].iloc[-1]
-        mensagem += (
-            f"\n*📊 INDICADORES ATUAIS:*\n"
-            f"• RSI: {r['rsi']:.1f} | ADX: {r['adx']:.1f}\n"
-            f"• MACD: {r['macd']:.4f} | Volume: {tf_principal['volume_ratio']:.1f}x\n"
-            f"• ATR: {r['atr']:.4f}\n"
-        )
-        
-        # Calcular alvos (preservar sua lógica)
-        atr = r['atr']
-        if par == 'BTC/USDT':
-            stop = round(preco - (atr * 1.2), 2)
-            alvo = round(preco + (atr * 2.5), 2)
-        else:
-            stop = round(preco - (atr * 1.5), 2)
-            alvo = round(preco + (atr * 3.0), 2)
-        
-        # Position sizing ajustado por macro
-        tamanho_base = 250  # Seu tamanho base
-        ajuste_posicao = 1.0
-        
-        if ARSENAL_DISPONIVEL and MACRO_DISPONIVEL:
-            try:
-                analise_macro = analisador_macro.obter_score_risco_macro()
-                ajuste_posicao = analise_macro.get('ajuste_posicao', 1.0)
-            except:
-                pass
-        
-        tamanho_final = tamanho_base * ajuste_posicao
-        
-        mensagem += f"""
-
-💰 RECOMENDAÇÃO:
-• Entry: ${preco:,.2f}
-• Stop: ${stop:,.2f}
-• Target: ${alvo:,.2f}
-• Posição: R$ {tamanho_final:,.0f}"""
-        
-        # Critérios de bonus
-        if criterios_bonus:
-            mensagem += "\n\n*🎁 BONUS CONFLUÊNCIA:*\n"
-            for criterio in criterios_bonus[:3]:
-                mensagem += f"{criterio}\n"
-        
-        # Contexto e detalhes
-        if 'timeframes' in setup_info:
-            mensagem += f"\n*📋 DETALHES:*\n{setup_info['timeframes']}\n"
-        
-        if 'detalhes' in setup_info:
-            mensagem += f"\n*📋 ESPECÍFICOS:*\n{setup_info['detalhes']}\n"
-        
-        # Contexto fundamentais (preservar)
-        contexto_macro = obter_dados_fundamentais()
-        mensagem += f"\n{contexto_macro}\n"
-        
-        # Timestamp (preservar)
-        agora_utc = datetime.datetime.utcnow()
-        agora_br = agora_utc - datetime.timedelta(hours=3)
-        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
-        
-        mensagem += f"\n🕘 {timestamp}"
-        
-        # STATUS FINAL OBRIGATÓRIO
-        if ARSENAL_DISPONIVEL:
-            mensagem += "\n🏦 Sistema Enhanced - Arsenal Completo"
-        else:
-            erros_principais = []
-            if not VWAP_DISPONIVEL:
-                erros_principais.append("VWAP")
-            if not MACRO_DISPONIVEL:
-                erros_principais.append("Macro")
-            if not EXPLICADOR_DISPONIVEL:
-                erros_principais.append("Explicador")
-            
-            mensagem += f"\n⚠️ Sistema Base - Sem: {', '.join(erros_principais)}"
-        
-        # Enviar alerta
-        if enviar_telegram(mensagem):
-            status_log = "ENHANCED" if ARSENAL_DISPONIVEL else "BASE ONLY"
-            print(f"✅ ALERTA {status_log}: {par} - {setup_info['setup']} (score: {score})")
-            registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
-            return True
-        
-        return False
-        
-    except Exception as e:
-        logging.error(f"Erro ao enviar alerta enhanced: {e}")
-        return False
-
-# SUA FUNÇÃO ORIGINAL DE ALERTA (PRESERVADA COMO FALLBACK)
-def enviar_alerta_avancado(par, analise_tf, setup_info):
-    """Alerta com análise de múltiplos timeframes (sua versão original + status)"""
-    try:
-        # Dados do timeframe principal (1h)
-        tf_principal = analise_tf.get('1h', {})
-        if tf_principal.get('status') != 'ok':
-            return False
-        
-        preco = tf_principal['preco']
-        
-        # Score avançado
-        score, criterios_bonus = calcular_score_avancado(analise_tf, setup_info)
-        score_visual = gerar_score_visual(score)
-        risco = categorizar_risco
