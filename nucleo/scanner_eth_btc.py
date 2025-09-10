@@ -1155,75 +1155,45 @@ def enviar_alerta_avancado_com_arsenal(par, analise_tf, setup_info):
         score_visual = gerar_score_visual(score)
         risco = categorizar_risco(score)
         
-        # Usar sua lógica atual de controle
-        if not pode_enviar_alerta(par, setup_info.get('id', '')):
-            return False
+        # Calcular alvos
+        df_1h = tf_principal['df']
+        atr = df_1h['atr'].iloc[-1]
         
-        # INDICADOR DE STATUS OBRIGATÓRIO
-        if ARSENAL_DISPONIVEL:
-            status_indicator = "🏦 ENHANCED"
-            status_detail = "Sistema completo ativo"
+        if par == 'BTC/USDT':
+            stop = round(preco - (atr * 1.2), 2)
+            alvo = round(preco + (atr * 2.5), 2)
         else:
-            status_indicator = "⚠️ BASE ONLY"
-            componentes_ok = sum([VWAP_DISPONIVEL, MACRO_DISPONIVEL, EXPLICADOR_DISPONIVEL])
-            status_detail = f"Arsenal parcial ({componentes_ok}/3)"
+            stop = round(preco - (atr * 1.5), 2)
+            alvo = round(preco + (atr * 3.0), 2)
         
-        # CONSTRUIR MENSAGEM BASE (com status obrigatório)
-        mensagem = f"""{status_indicator} | {setup_info['emoji']} SINAL - {par} ${preco:,.2f}
-
-{setup_info['setup']}
+        # Timestamp
+        agora_utc = datetime.datetime.utcnow()
+        agora_br = agora_utc - datetime.timedelta(hours=3)
+        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
+        
+        # Link TradingView
+        symbol_tv = par.replace("/", "")
+        link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_tv}"
+        
+        # Dados fundamentais
+        contexto_macro = obter_dados_fundamentais()
+        
+        # STATUS OBRIGATÓRIO NO FALLBACK TAMBÉM
+        status_indicator = "📊 BASE" if not ARSENAL_DISPONIVEL else "🏦 ENHANCED"
+        
+        # Construir mensagem avançada
+        mensagem = f"""{status_indicator} | {setup_info['emoji']} {setup_info['setup']}
 {setup_info['prioridade']}
 
-📊 SCORE: {score:.1f}/10 {score_visual}
-🎲 Risco: {risco['emoji']} {risco['nivel']}
-📡 Status: {status_detail}"""
-        
-        # ADICIONAR CONTEXTO VWAP (SE ARSENAL DISPONÍVEL)
-        if ARSENAL_DISPONIVEL and VWAP_DISPONIVEL:
-            try:
-                df = tf_principal['df']
-                vwap_diario = analisador_vwap.calcular_vwap_periodo(df, '1D')
-                vwap_semanal = analisador_vwap.calcular_vwap_periodo(df, '1S')
-                
-                analise_vwap = analisador_vwap.analisar_posicao_vwap(
-                    preco, 
-                    vwap_diario.iloc[-1], 
-                    vwap_semanal.iloc[-1]
-                )
-                
-                bias = analise_vwap.get('bias_institucional', 'NEUTRO')
-                dist_diaria = analise_vwap.get('distancia_diaria_pct', 0)
-                
-                mensagem += f"""
+📊 Par: `{par}`
+💰 Preço: `${preco:,.2f}`
+🎯 Alvo: `${alvo:,.2f}`
+🛑 Stop: `${stop:,.2f}`
 
-🏦 CONTEXTO VWAP:
-• Bias Institucional: {bias}
-• Distância VWAP: {dist_diaria:+.1f}%
-• Nível VWAP: ${analise_vwap.get('vwap_diario', 0):,.2f}"""
-                
-            except Exception as e:
-                mensagem += f"\n\n⚠️ VWAP: Erro na análise ({str(e)[:50]}...)"
-                logging.warning(f"Erro contexto VWAP: {e}")
+📊 Score: {score_visual}
+🎲 Risco: {risco['emoji']} {risco['nivel']}"""
         
-        # ADICIONAR CONTEXTO MACRO (SE ARSENAL DISPONÍVEL)
-        if ARSENAL_DISPONIVEL and MACRO_DISPONIVEL:
-            try:
-                analise_macro = analisador_macro.obter_score_risco_macro()
-                risco_macro = analise_macro.get('score_risco_total', 0)
-                
-                if risco_macro > 3:
-                    mensagem += f"""
-
-🌍 CONTEXTO MACRO:
-• Risk Score: {risco_macro:.1f}/10
-• Ajuste Posição: {analise_macro.get('ajuste_posicao', 1.0):.1f}x
-• {analise_macro.get('explicacao', '')[:60]}..."""
-                
-            except Exception as e:
-                mensagem += f"\n\n⚠️ MACRO: Erro na análise ({str(e)[:50]}...)"
-                logging.warning(f"Erro contexto macro: {e}")
-        
-        # Análise por timeframe (preservar sua lógica)
+        # Análise por timeframe
         mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
         for tf, dados in analise_tf.items():
             if dados.get('status') == 'ok':
@@ -1709,7 +1679,89 @@ if __name__ == "__main__":
         exit(0)
     else:
         print("💥 Scanner avançado falhou!")
-        exit(1)
+        exit(1)(score)
+        
+        # Usar sua lógica atual de controle
+        if not pode_enviar_alerta(par, setup_info.get('id', '')):
+            return False
+        
+        # INDICADOR DE STATUS OBRIGATÓRIO
+        if ARSENAL_DISPONIVEL:
+            status_indicator = "🏦 ENHANCED"
+            status_detail = "Sistema completo ativo"
+        else:
+            status_indicator = "⚠️ BASE ONLY"
+            componentes_ok = sum([VWAP_DISPONIVEL, MACRO_DISPONIVEL, EXPLICADOR_DISPONIVEL])
+            status_detail = f"Arsenal parcial ({componentes_ok}/3)"
+        
+        # CONSTRUIR MENSAGEM BASE (com status obrigatório)
+        mensagem = f"""{status_indicator} | {setup_info['emoji']} SINAL - {par} ${preco:,.2f}
+
+{setup_info['setup']}
+{setup_info['prioridade']}
+
+📊 SCORE: {score:.1f}/10 {score_visual}
+🎲 Risco: {risco['emoji']} {risco['nivel']}
+📡 Status: {status_detail}"""
+        
+        # ADICIONAR CONTEXTO VWAP (SE ARSENAL DISPONÍVEL)
+        if ARSENAL_DISPONIVEL and VWAP_DISPONIVEL:
+            try:
+                df = tf_principal['df']
+                vwap_diario = analisador_vwap.calcular_vwap_periodo(df, '1D')
+                vwap_semanal = analisador_vwap.calcular_vwap_periodo(df, '1S')
+                
+                analise_vwap = analisador_vwap.analisar_posicao_vwap(
+                    preco, 
+                    vwap_diario.iloc[-1], 
+                    vwap_semanal.iloc[-1]
+                )
+                
+                bias = analise_vwap.get('bias_institucional', 'NEUTRO')
+                dist_diaria = analise_vwap.get('distancia_diaria_pct', 0)
+                
+                mensagem += f"""
+
+🏦 CONTEXTO VWAP:
+• Bias Institucional: {bias}
+• Distância VWAP: {dist_diaria:+.1f}%
+• Nível VWAP: ${analise_vwap.get('vwap_diario', 0):,.2f}"""
+                
+            except Exception as e:
+                mensagem += f"\n\n⚠️ VWAP: Erro na análise ({str(e)[:50]}...)"
+                logging.warning(f"Erro contexto VWAP: {e}")
+        
+        # ADICIONAR CONTEXTO MACRO (SE ARSENAL DISPONÍVEL)
+        if ARSENAL_DISPONIVEL and MACRO_DISPONIVEL:
+            try:
+                analise_macro = analisador_macro.obter_score_risco_macro()
+                risco_macro = analise_macro.get('score_risco_total', 0)
+                
+                if risco_macro > 3:
+                    mensagem += f"""
+
+🌍 CONTEXTO MACRO:
+• Risk Score: {risco_macro:.1f}/10
+• Ajuste Posição: {analise_macro.get('ajuste_posicao', 1.0):.1f}x
+• {analise_macro.get('explicacao', '')[:60]}..."""
+                
+            except Exception as e:
+                mensagem += f"\n\n⚠️ MACRO: Erro na análise ({str(e)[:50]}...)"
+                logging.warning(f"Erro contexto macro: {e}")
+        
+        # Análise por timeframe (preservar sua lógica)
+        mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
+        for tf, dados in analise_tf.items():
+            if dados.get('status') == 'ok':
+                tendencia_emoji = {
+                    'alta_forte': '🚀',
+                    'alta': '📈', 
+                    'lateral': '➡️',
+                    'baixa': '📉',
+                    'baixa_forte': '💥'
+                }.get(dados['tendencia'], '❓')
+                
+                vol_emoji = {
                     'alta': '🔥',
                     'normal': '🟡',
                     'baixa': '😴'
@@ -1720,7 +1772,7 @@ if __name__ == "__main__":
                     f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
                 )
         
-        # Indicadores atuais (preservar)
+        # Indicadores atuais
         r = tf_principal['df'].iloc[-1]
         mensagem += (
             f"\n*📊 INDICADORES ATUAIS:*\n"
@@ -1759,16 +1811,29 @@ if __name__ == "__main__":
 • Target: ${alvo:,.2f}
 • Posição: R$ {tamanho_final:,.0f}"""
         
+        # Critérios de bonus
+        if criterios_bonus:
+            mensagem += "\n\n*🎁 BONUS CONFLUÊNCIA:*\n"
+            for criterio in criterios_bonus[:3]:
+                mensagem += f"{criterio}\n"
+        
+        # Contexto e detalhes
+        if 'timeframes' in setup_info:
+            mensagem += f"\n*📋 DETALHES:*\n{setup_info['timeframes']}\n"
+        
+        if 'detalhes' in setup_info:
+            mensagem += f"\n*📋 ESPECÍFICOS:*\n{setup_info['detalhes']}\n"
+        
         # Contexto fundamentais (preservar)
         contexto_macro = obter_dados_fundamentais()
-        mensagem += f"\n\n{contexto_macro}"
+        mensagem += f"\n{contexto_macro}\n"
         
         # Timestamp (preservar)
         agora_utc = datetime.datetime.utcnow()
         agora_br = agora_utc - datetime.timedelta(hours=3)
         timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
         
-        mensagem += f"\n\n🕘 {timestamp}"
+        mensagem += f"\n🕘 {timestamp}"
         
         # STATUS FINAL OBRIGATÓRIO
         if ARSENAL_DISPONIVEL:
@@ -1811,57 +1876,4 @@ def enviar_alerta_avancado(par, analise_tf, setup_info):
         # Score avançado
         score, criterios_bonus = calcular_score_avancado(analise_tf, setup_info)
         score_visual = gerar_score_visual(score)
-        risco = categorizar_risco(score)
-        
-        # Calcular alvos
-        df_1h = tf_principal['df']
-        atr = df_1h['atr'].iloc[-1]
-        
-        if par == 'BTC/USDT':
-            stop = round(preco - (atr * 1.2), 2)
-            alvo = round(preco + (atr * 2.5), 2)
-        else:
-            stop = round(preco - (atr * 1.5), 2)
-            alvo = round(preco + (atr * 3.0), 2)
-        
-        # Timestamp
-        agora_utc = datetime.datetime.utcnow()
-        agora_br = agora_utc - datetime.timedelta(hours=3)
-        timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
-        
-        # Link TradingView
-        symbol_tv = par.replace("/", "")
-        link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_tv}"
-        
-        # Dados fundamentais
-        contexto_macro = obter_dados_fundamentais()
-        
-        # STATUS OBRIGATÓRIO NO FALLBACK TAMBÉM
-        status_indicator = "📊 BASE" if not ARSENAL_DISPONIVEL else "🏦 ENHANCED"
-        
-        # Construir mensagem avançada
-        mensagem = f"""{status_indicator} | {setup_info['emoji']} {setup_info['setup']}
-{setup_info['prioridade']}
-
-📊 Par: `{par}`
-💰 Preço: `${preco:,.2f}`
-🎯 Alvo: `${alvo:,.2f}`
-🛑 Stop: `${stop:,.2f}`
-
-📊 Score: {score_visual}
-🎲 Risco: {risco['emoji']} {risco['nivel']}"""
-        
-        # Análise por timeframe
-        mensagem += "\n\n*📈 ANÁLISE TIMEFRAMES:*\n"
-        for tf, dados in analise_tf.items():
-            if dados.get('status') == 'ok':
-                tendencia_emoji = {
-                    'alta_forte': '🚀',
-                    'alta': '📈', 
-                    'lateral': '➡️',
-                    'baixa': '📉',
-                    'baixa_forte': '💥'
-                }.get(dados['tendencia'], '❓')
-                
-                vol_emoji = {
-                    '
+        risco = categorizar_risco
