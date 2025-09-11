@@ -987,7 +987,7 @@ if __name__ == "__main__":
         exit(0)
     else:
         print("💥 Scanner avançado falhou!")
-        exit(1)]} {risco['nivel']}
+        exit(1)
 📡 Status: {status_detail}"""
         
         # ADICIONAR CONTEXTO VWAP (SE ARSENAL DISPONÍVEL)
