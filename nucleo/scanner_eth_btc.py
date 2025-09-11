@@ -988,7 +988,6 @@ if __name__ == "__main__":
     else:
         print("💥 Scanner avançado falhou!")
         exit(1)
-📡 Status: {status_detail}"""
         
         # ADICIONAR CONTEXTO VWAP (SE ARSENAL DISPONÍVEL)
         if ARSENAL_DISPONIVEL and VWAP_DISPONIVEL:
