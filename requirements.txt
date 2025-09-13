@@ -4,6 +4,6 @@ pandas==2.0.3
 requests==2.31.0
 ta==0.10.2
 ccxt==4.4.97
-# Install pandas-ta 0.3.14b0 directly from GitHub to avoid PyPI resolution issues
-pandas-ta @ git+https://github.com/twopirllc/pandas-ta@0.3.14b0
+# Direct URL to tag zip to avoid git clone and PyPI name differences
+pandas-ta @ https://github.com/twopirllc/pandas-ta/archive/refs/tags/0.3.14b0.zip
 # python-telegram-bot==20.3
