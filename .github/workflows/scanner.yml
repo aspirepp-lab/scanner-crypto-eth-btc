@@ -96,8 +96,8 @@ jobs:
         echo "🔐 Variáveis Telegram: $(env | grep TELEGRAM | wc -l)"
         echo ""
         
-        # Executar scanner enhanced
-        if python nucleo/scanner_eth_btc.py; then
+        # Executar scanner
+        if python scanner_github_actions.py; then
             echo "✅ Scanner executado com sucesso!"
         else
             echo "❌ Scanner falhou!"
