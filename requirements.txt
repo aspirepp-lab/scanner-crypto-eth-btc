@@ -1,5 +1,13 @@
-ccxt==4.4.97
+# Stable pin set for GitHub Actions (Python 3.11)
+# Notes:
+# - pandas-ta==0.3.14b0 is the last pre-0.4 series compatible with pandas 2.0.x and Python 3.11.
+# - numpy pinned to <2.0 to avoid ABI changes that can break wheels on runners.
+# - If you use python-telegram-bot (import telegram), uncomment the last line.
+
+numpy>=1.24,<2.0
 pandas==2.0.3
 requests==2.31.0
 ta==0.10.2
-pandas-ta==0.3.14b
+ccxt==4.4.97
+pandas-ta==0.3.14b0
+# python-telegram-bot==20.3
