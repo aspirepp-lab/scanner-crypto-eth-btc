@@ -1,5 +1,5 @@
-ccxt==4.1.64
+ccxt==4.4.97
 pandas==2.0.3
 requests==2.31.0
 ta==0.10.2
-pandas-ta==0.3.14b0
+pandas-ta==0.3.14b
