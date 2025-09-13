@@ -305,7 +305,8 @@ def calcular_indicadores_completos(df):
         
         # Volume
         df['obv'] = OnBalanceVolumeIndicator(close, volume).on_balance_volume()
-        df['volume_sma'] = VolumeSMAIndicator(volume, 20).volume_sma()
+        d
+        df['volume_sma'] = SMAIndicator(close=volume, window=20, fillna=True).sma_indicator()
         
         # Supertrend
         df = calcular_supertrend(df)
