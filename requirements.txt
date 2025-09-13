@@ -1,9 +1,9 @@
 # Stable pin set for GitHub Actions (Python 3.11)
-# pandas_ta uses underscore on PyPI; keep <0.4 to stay compatible with pandas 2.0.x
 numpy>=1.24,<2.0
 pandas==2.0.3
 requests==2.31.0
 ta==0.10.2
 ccxt==4.4.97
-pandas_ta==0.3.14b0
+# Install pandas-ta 0.3.14b0 directly from GitHub to avoid PyPI resolution issues
+pandas-ta @ git+https://github.com/twopirllc/pandas-ta@0.3.14b0
 # python-telegram-bot==20.3
