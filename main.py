@@ -130,8 +130,8 @@ def analisar_multiplos_timeframes(exchange, par):
                 resultados[tf] = {'status': 'dados_invalidos'}
                 continue
         except Exception as e:
-        logging.error(f"Falha ao preparar dados ({par}, {tf}): {e}")
-        resultados[tf] = {"status": "erro", "mensagem": str(e)}
+            logging.error(f"Falha ao preparar dados ({par}, {tf}): {e}")
+            resultados[tf] = {"status": "erro", "mensagem": str(e)}
         continue
 def calcular_indicadores_completos(df):
     """
