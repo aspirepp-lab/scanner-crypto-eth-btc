@@ -130,7 +130,7 @@ def analisar_multiplos_timeframes(exchange, par):
                 resultados[tf] = {'status': 'dados_invalidos'}
                 continue
                 
-    def calcular_indicadores_completos(df):
+def calcular_indicadores_completos(df):
     """
     Calcula o conjunto completo de indicadores.
     Inclusões (E): VWAP e BB Width/Squeeze sob controle por variáveis de ambiente.
