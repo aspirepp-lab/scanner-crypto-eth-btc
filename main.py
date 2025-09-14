@@ -130,35 +130,112 @@ def analisar_multiplos_timeframes(exchange, par):
                 resultados[tf] = {'status': 'dados_invalidos'}
                 continue
                 
-            # Calcular indicadores completos
-            df = calcular_indicadores_completos(df)
-            
-            # Análise de tendência
-            tendencia = determinar_tendencia(df)
-            forca_tendencia = calcular_forca_tendencia(df)
-            volatilidade = calcular_volatilidade(df)
-            
-            r = df.iloc[-1]
-            
-            resultados[tf] = {
-                'status': 'ok',
-                'df': df,
-                'tendencia': tendencia,
-                'forca': forca_tendencia,
-                'volatilidade': volatilidade,
-                'preco': r['close'],
-                'rsi': r['rsi'],
-                'adx': r['adx'],
-                'macd': r['macd'],
-                'macd_signal': r['macd_signal'],
-                'volume_ratio': df['volume'].iloc[-1] / df['volume'].mean()
-            }
-            
-        except Exception as e:
-            logging.error(f"Erro no timeframe {tf} para {par}: {e}")
-            resultados[tf] = {'status': 'erro', 'erro': str(e)}
-    
-    return resultados
+            def calcular_indicadores_completos(df):
+    """
+    Calcula o conjunto completo de indicadores.
+    Inclusões (E): VWAP e BB Width/Squeeze sob controle por variáveis de ambiente.
+    """
+    try:
+        close = df['close']
+        high = df['high']
+        low = df['low']
+        volume = df['volume']
+
+        # Médias móveis múltiplas
+        df['ema9'] = EMAIndicator(close, 9).ema_indicator()
+        df['ema21'] = EMAIndicator(close, 21).ema_indicator()
+        df['ema50'] = EMAIndicator(close, 50).ema_indicator()
+        df['ema200'] = EMAIndicator(close, 200).ema_indicator()
+        df['sma20'] = SMAIndicator(close, 20).sma_indicator()
+
+        # Momentum
+        df['rsi'] = RSIIndicator(close, 14).rsi()
+
+        # StochRSI
+        try:
+            stoch_rsi = StochRSIIndicator(close, 14, 3, 3)
+            df['stoch_rsi'] = stoch_rsi.stochrsi()
+        except Exception:
+            df['stoch_rsi'] = df['rsi'] / 100.0
+
+        # Tendência
+        macd = MACD(close)
+        df['macd'] = macd.macd()
+        df['macd_signal'] = macd.macd_signal()
+        df['macd_histogram'] = macd.macd_diff()
+
+        df['adx'] = ADXIndicator(high, low, close, 14).adx()
+
+        # Volatilidade (ATR)
+        df['atr'] = AverageTrueRange(high, low, close, 14).average_true_range()
+
+        # Bandas de Bollinger
+        bollinger = BollingerBands(close, 20, 2)
+        df['bb_upper'] = bollinger.bollinger_hband()
+        df['bb_middle'] = bollinger.bollinger_mavg()
+        df['bb_lower'] = bollinger.bollinger_lband()
+
+        # ===== (E) BB Width + Squeeze (opcional) =====
+        if os.getenv("ATIVAR_BBWIDTH", "false").lower() == "true":
+            try:
+                base = df['bb_middle'].replace(0, np.nan)
+                df['bb_width'] = (df['bb_upper'] - df['bb_lower']) / base
+                if len(df) >= 50:
+                    limiar = df['bb_width'].rolling(50).quantile(0.2).iloc[-1]
+                else:
+                    limiar = df['bb_width'].median()
+                df['bb_squeeze'] = df['bb_width'] < limiar
+            except Exception as e:
+                logging.warning(f"BB Width falhou (seguindo sem): {e}")
+                df['bb_width'] = np.nan
+                df['bb_squeeze'] = False
+        else:
+            if 'bb_width' not in df.columns:
+                df['bb_width'] = np.nan
+            if 'bb_squeeze' not in df.columns:
+                df['bb_squeeze'] = False
+
+        # Volume (média de volume 20)
+        try:
+            df['volume_sma'] = df['volume'].rolling(20, min_periods=1).mean() if 'volume_sma' not in df.columns else df['volume_sma']
+        except Exception:
+            df['volume_sma'] = df['volume'].rolling(20, min_periods=1).mean()
+
+        df['obv'] = OnBalanceVolumeIndicator(close, volume).on_balance_volume()
+
+        # Supertrend
+        df = calcular_supertrend(df)
+
+        # ===== (E) VWAP (opcional) =====
+        if os.getenv("ATIVAR_VWAP", "false").lower() == "true":
+            try:
+                pv = (df['close'] * df['volume']).cumsum()
+                vv = df['volume'].cumsum().replace(0, np.nan)
+                df['vwap'] = pv / vv
+                df['vwap_ok'] = (df['close'] > df['vwap']) & ((df['close'] - df['vwap']) / df['vwap'] < 0.005)
+            except Exception as e:
+                logging.warning(f"VWAP falhou (seguindo sem): {e}")
+                df['vwap'] = np.nan
+                df['vwap_ok'] = False
+        else:
+            if 'vwap' not in df.columns:
+                df['vwap'] = np.nan
+            if 'vwap_ok' not in df.columns:
+                df['vwap_ok'] = False
+
+        # Preencher NaN
+        for col in df.columns:
+            try:
+                if df[col].dtype in ['float64', 'int64'] and df[col].isna().sum() > 0:
+                    df[col] = df[col].fillna(method='bfill').fillna(method='ffill')
+            except Exception:
+                pass
+
+        return df
+
+    except Exception as e:
+        logging.error(f"Erro ao calcular indicadores: {e}")
+        return df
 
 def determinar_tendencia(df):
     """Determina tendência baseada em múltiplos indicadores"""
@@ -305,8 +382,7 @@ def calcular_indicadores_completos(df):
         
         # Volume
         df['obv'] = OnBalanceVolumeIndicator(close, volume).on_balance_volume()
-        d
-        df['volume_sma'] = SMAIndicator(close=volume, window=20, fillna=True).sma_indicator()
+        df['volume_sma'] = VolumeSMAIndicator(volume, 20).volume_sma()
         
         # Supertrend
         df = calcular_supertrend(df)
@@ -795,7 +871,11 @@ def salvar_sinais_monitorados(sinais):
     with open(ARQUIVO_SINAIS_MONITORADOS, 'w') as f:
         json.dump(sinais, f, indent=2)
 
-def registrar_sinal_monitorado(par, setup_id, preco_entrada, alvo, stop):
+def registrar_sinal_monitorado(par, setup_id, preco_entrada, alvo, stop, score_100=None):
+    """
+    Registra um sinal em dados/sinais_monitorados.json.
+    Compatível com a versão anterior; o campo score_100 é OPCIONAL.
+    """
     sinais = carregar_sinais_monitorados()
     novo_sinal = {
         "par": par,
@@ -806,6 +886,12 @@ def registrar_sinal_monitorado(par, setup_id, preco_entrada, alvo, stop):
         "timestamp": datetime.datetime.utcnow().isoformat(),
         "status": "em_aberto"
     }
+    if score_100 is not None:
+        try:
+            novo_sinal["score_100"] = float(score_100)
+        except Exception:
+            novo_sinal["score_100"] = score_100
+
     sinais.append(novo_sinal)
     salvar_sinais_monitorados(sinais)
     print(f"📝 Sinal registrado: {par} - {setup_id}")
@@ -981,44 +1067,45 @@ def enviar_telegram(mensagem):
         return False
 
 def enviar_alerta_avancado(par, analise_tf, setup_info):
-    """Alerta com análise de múltiplos timeframes"""
+    """Alerta com análise de múltiplos timeframes + (B) bloco de componentes 0–100 opcional."""
     try:
         # Dados do timeframe principal (1h)
         tf_principal = analise_tf.get('1h', {})
         if tf_principal.get('status') != 'ok':
             return False
-        
+
         preco = tf_principal['preco']
-        
-        # Score avançado
+
+        # Score avançado (0–10) que você já usa
         score, criterios_bonus = calcular_score_avancado(analise_tf, setup_info)
         score_visual = gerar_score_visual(score)
         risco = categorizar_risco(score)
-        
-        # Calcular alvos
+
+        # Calcular alvos (sua lógica atual baseada em ATR de 1h)
         df_1h = tf_principal['df']
         atr = df_1h['atr'].iloc[-1]
-        
+
         if par == 'BTC/USDT':
             stop = round(preco - (atr * 1.2), 2)
             alvo = round(preco + (atr * 2.5), 2)
         else:
             stop = round(preco - (atr * 1.5), 2)
             alvo = round(preco + (atr * 3.0), 2)
-        
+
         # Timestamp
         agora_utc = datetime.datetime.utcnow()
         agora_br = agora_utc - datetime.timedelta(hours=3)
         timestamp = agora_br.strftime('%d/%m %H:%M (BR)')
-        
+
         # Link TradingView
         symbol_tv = par.replace("/", "")
         link_tv = f"https://www.tradingview.com/chart/?symbol=OKX:{symbol_tv}"
-        
-        # Dados fundamentais
+
+        # Dados fundamentais (A: ocultar dentro do alerta se macro único estiver ativo)
         contexto_macro = obter_dados_fundamentais()
-        
-        # Construir mensagem avançada
+        macro_unico_ativo = os.getenv("ATIVAR_MACRO_UNICO", "false").lower() == "true"
+
+        # Montagem da mensagem (mantive seu estilo)
         mensagem = (
             f"{setup_info['emoji']} *{setup_info['setup']}*\n"
             f"{setup_info['prioridade']}\n\n"
@@ -1029,59 +1116,81 @@ def enviar_alerta_avancado(par, analise_tf, setup_info):
             f"📊 *Score:* {score_visual}\n"
             f"🎲 *Risco:* {risco['emoji']} {risco['nivel']}\n\n"
         )
-        
+
         # Análise por timeframe
         mensagem += "*📈 ANÁLISE TIMEFRAMES:*\n"
         for tf, dados in analise_tf.items():
             if dados.get('status') == 'ok':
                 tendencia_emoji = {
                     'alta_forte': '🚀',
-                    'alta': '📈', 
+                    'alta': '📈',
                     'lateral': '➡️',
                     'baixa': '📉',
                     'baixa_forte': '💥'
                 }.get(dados['tendencia'], '❓')
-                
+
                 vol_emoji = {
                     'alta': '🔥',
                     'normal': '🟡',
                     'baixa': '😴'
                 }.get(dados['volatilidade'], '❓')
-                
+
                 mensagem += (
                     f"• {tf}: {tendencia_emoji} {dados['tendencia']} "
                     f"(força: {dados['forca']}/10, vol: {vol_emoji})\n"
                 )
-        
-        # Indicadores atuais
-        r = tf_principal['df'].iloc[-1]
+
+        # Indicadores atuais no 1h
+        r = df_1h.iloc[-1]
+        stoch_str = ""
+        try:
+            stoch_val = float(r.get('stoch_rsi', 0)*100.0)
+            stoch_str = f"{stoch_val:.1f}"
+        except Exception:
+            stoch_str = "—"
         mensagem += (
             f"\n*📊 INDICADORES ATUAIS:*\n"
-            f"• RSI: {r['rsi']:.1f} | StochRSI: {r.get('stoch_rsi', 0)*100:.1f}\n"
+            f"• RSI: {r['rsi']:.1f} | StochRSI: {stoch_str}\n"
             f"• ADX: {r['adx']:.1f} | MACD: {r['macd']:.4f}\n"
-            f"• Volume: {tf_principal['volume_ratio']:.1f}x média\n"
+            f"• Volume: {analise_tf['1h']['volume_ratio']:.1f}x média\n"
             f"• ATR: {r['atr']:.4f}\n\n"
         )
-        
-        # Critérios de bonus
+
+        # Critérios bônus
         if criterios_bonus:
             mensagem += "*🎁 BONUS CONFLUÊNCIA:*\n"
             for criterio in criterios_bonus[:3]:
                 mensagem += f"{criterio}\n"
             mensagem += "\n"
-        
-        # Contexto e detalhes
+
+        # Detalhes
         if 'timeframes' in setup_info:
             mensagem += f"*📋 DETALHES:*\n{setup_info['timeframes']}\n\n"
-        
         if 'detalhes' in setup_info:
             mensagem += f"*📋 ESPECÍFICOS:*\n{setup_info['detalhes']}\n\n"
-        
-        mensagem += f"{contexto_macro}\n\n"
+
+        # (B) Bloco de Pontuação 0–100 com componentes (opcional)
+        score_100 = None
+        if os.getenv("ATIVAR_SCORE_COMPONENTES", "false").lower() == "true":
+            try:
+                score_100, comp, confs_txt = gpt_obter_score_100(df_1h)
+                linha = gpt_formatar_linha_componentes(comp)
+                mensagem += (
+                    f"🧮 Pontuação: {score_100}/100\n"
+                    f"📎 Componentes: {linha}\n"
+                    f"🔎 Confluências: {confs_txt}\n\n"
+                )
+            except Exception as e:
+                logging.warning(f"Bloco de componentes falhou: {e}")
+
+        # (A) Macro dentro do alerta só quando o macro único NÃO estiver ativo
+        if not macro_unico_ativo:
+            mensagem += f"{contexto_macro}\n\n"
+
         mensagem += f"🕘 {timestamp}\n"
         mensagem += f"📉 [TradingView]({link_tv})\n\n"
-        
-        # Recomendação baseada no score
+
+        # Recomendação baseada no score (mantido)
         if score >= 8.5:
             explicacao = (
                 "*🎯 RECOMENDAÇÃO:*\n"
@@ -1100,18 +1209,17 @@ def enviar_alerta_avancado(par, analise_tf, setup_info):
                 "Setup de qualidade moderada. "
                 "Aguardar mais confirmações pode ser prudente."
             )
-        
         mensagem += explicacao
-        
-        # Enviar alerta
+
+        # Enviar alerta + registro
         if pode_enviar_alerta(par, setup_info['setup']):
             if enviar_telegram(mensagem):
                 print(f"✅ ALERTA AVANÇADO: {par} - {setup_info['setup']} (score: {score})")
-                registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop)
+                registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop, score_100=score_100)
                 return True
-        
+
         return False
-        
+
     except Exception as e:
         logging.error(f"Erro ao enviar alerta avançado: {e}")
         return False
@@ -1335,16 +1443,21 @@ def enviar_relatorio_status_avancado(relatorio):
 # ===============================
 
 def executar_scanner_avancado():
-    """Scanner principal com funcionalidades avançadas"""
+    """
+    Scanner principal com funcionalidades avançadas.
+    Inclusões:
+      (A) Macro único no início do ciclo (opcional por variável)
+      (D) Filtro de liquidez (volume médio diário 30d) antes do loop (opcional)
+    """
     try:
         print("🚀 SCANNER AVANÇADO ETH/BTC - ETAPA 2")
         print(f"⏰ Executado em: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print(f"📊 Pares: {', '.join(PARES_ALVOS)}")
         print(f"📈 Timeframes: {', '.join(TIMEFRAMES)}")
-        
+
         # Inicializar exchange
         exchange = ccxt.okx({'enableRateLimit': True, 'timeout': 30000})
-        
+
         # Conectar com retry
         for tentativa in range(3):
             try:
@@ -1354,40 +1467,57 @@ def executar_scanner_avancado():
                 if tentativa == 2:
                     raise e
                 time.sleep(2)
-        
+
+        # (A) Macro único no início do ciclo (se ativado)
+        if os.getenv("ATIVAR_MACRO_UNICO", "false").lower() == "true":
+            try:
+                dados_macro = gpt_macro_coletar_dados()
+                gpt_macro_enviar_uma_vez(dados_macro)
+            except Exception as e:
+                logging.warning(f"Macro único falhou (seguindo): {e}")
+
         # Verificar sinais em aberto
         print("🔍 Verificando sinais monitorados...")
         sinais_atualizados = verificar_sinais_monitorados(exchange)
-        
+
+        # (D) Filtro de liquidez por volume médio 30d (se ativado)
+        pares_exec = list(PARES_ALVOS)
+        if os.getenv("ATIVAR_FILTRO_LIQUIDEZ", "false").lower() == "true":
+            minimo = float(os.getenv("LIQ_MINIMO_30D", "1000000"))
+            try:
+                pares_exec = gpt_liq_filtrar_por_media_30d(exchange, pares_exec, minimo)
+            except Exception as e:
+                logging.warning(f"Filtro de liquidez falhou (seguindo com pares originais): {e}")
+
         # Analisar cada par
         total_sinais = 0
         relatorio_completo = []
-        
-        for par in PARES_ALVOS:
+
+        for par in pares_exec:
             if par not in exchange.markets:
                 continue
-                
+
             print(f"\n🎯 Iniciando análise avançada: {par}")
             sinais = analisar_par_avancado(exchange, par)
             total_sinais += len(sinais)
-            
-            # Coletar dados para relatório
+
+            # Coletar dados para relatório (mantido)
             try:
                 ticker = exchange.fetch_ticker(par)
                 preco = ticker['last']
-                
+
                 # RSI básico
                 ohlcv = exchange.fetch_ohlcv(par, '1h', limit=20)
                 df_temp = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
                 rsi = RSIIndicator(df_temp['close'], 14).rsi().iloc[-1]
-                
+
                 relatorio_completo.append({
                     'par': par,
                     'preco': preco,
                     'rsi': rsi if not pd.isna(rsi) else 0,
                     'sinais': len(sinais)
                 })
-                
+
             except Exception as e:
                 relatorio_completo.append({
                     'par': par,
@@ -1395,22 +1525,22 @@ def executar_scanner_avancado():
                     'rsi': 0,
                     'sinais': len(sinais)
                 })
-            
+
             time.sleep(1)
-        
+
         print(f"\n✅ SCANNER AVANÇADO FINALIZADO")
         print(f"📨 Total de sinais enviados: {total_sinais}")
-        
+
         # Enviar relatório se não houver sinais
         if total_sinais == 0:
             enviar_relatorio_status_avancado(relatorio_completo)
-        
+
         return True
-        
+
     except Exception as e:
         logging.error(f"Erro crítico no scanner avançado: {e}")
-        
-        # Alerta de erro
+
+        # Alerta de erro (mantido)
         if TOKEN != "dummy_token":
             mensagem_erro = (
                 f"🚨 *ERRO SCANNER AVANÇADO*\n\n"
@@ -1418,7 +1548,7 @@ def executar_scanner_avancado():
                 f"⏰ {datetime.datetime.utcnow().strftime('%H:%M UTC')}"
             )
             enviar_telegram(mensagem_erro)
-        
+
         return False
 
 # ===============================
@@ -1430,7 +1560,7 @@ if __name__ == "__main__":
     print("📋 Múltiplos timeframes + Setups avançados")
     print("🔍 Confluência entre 1h e 4h")
     print("⚡ Análise premium com score visual\n")
-    
+   
     sucesso = executar_scanner_avancado()
     
     if sucesso:
@@ -1439,3 +1569,144 @@ if __name__ == "__main__":
     else:
         print("💥 Scanner avançado falhou!")
         exit(1)
+        # ============================== [GPT] SUPORTES — ADICIONAR NO FINAL ==============================
+import os
+
+# (B) Pontuação 0–100 com componentes (tendência, momento, volume, volatilidade, confluência)
+def gpt_comp_calcular(df):
+    import pandas as _pd
+    close = _pd.to_numeric(df["close"], errors="coerce")
+    media50 = close.rolling(50, min_periods=1).mean()
+    media9  = close.rolling(9,  min_periods=1).mean()
+
+    tendencia = 20.0 if close.iloc[-1] > media50.iloc[-1] else 8.0
+    momento   = 20.0 if close.iloc[-1] > media9.iloc[-1]  else 10.0
+
+    # volume_sma: usa sua coluna se existir; senão calcula
+    try:
+        vol_sma20 = float(df["volume_sma"].iloc[-1])
+    except Exception:
+        vol_sma20 = float(df["volume"].rolling(20, min_periods=1).mean().iloc[-1])
+    vol_atual = float(df["volume"].iloc[-1])
+    vol_rel   = vol_atual / max(1.0, vol_sma20)
+    volume    = 20.0 if vol_rel >= 1.5 else (10.0 if vol_rel >= 1.0 else 5.0)
+
+    # volatilidade via ATR%
+    atr_col = "atr"
+    if atr_col not in df.columns and "atr14" in df.columns:
+        atr_col = "atr14"
+    atr14 = float(df[atr_col].iloc[-1]) if atr_col in df.columns else 0.0
+    preco = float(close.iloc[-1])
+    vol_pct = (atr14 / preco) if preco > 0 else 0.0
+    volatil  = 15.0 if 0.01 <= vol_pct <= 0.04 else 8.0
+
+    conf = 0.0
+    try:
+        if bool(df.get("vwap_ok", False).iloc[-1]):    conf += 5.0
+    except Exception:
+        pass
+    try:
+        if bool(df.get("bb_squeeze", False).iloc[-1]): conf += 5.0
+    except Exception:
+        pass
+
+    return {
+        "tendencia": tendencia,
+        "momento": momento,
+        "volume": volume,
+        "volatilidade": volatil,
+        "confluencia": conf
+    }
+
+def gpt_comp_score_100(comp):
+    PESO_TENDENCIA     = float(os.getenv("PESO_TENDENCIA",     "1.0"))
+    PESO_MOMENTO       = float(os.getenv("PESO_MOMENTO",       "1.0"))
+    PESO_VOLUME        = float(os.getenv("PESO_VOLUME",        "1.0"))
+    PESO_VOLATILIDADE  = float(os.getenv("PESO_VOLATILIDADE",  "1.0"))
+    PESO_CONFLUENCIA   = float(os.getenv("PESO_CONFLUENCIA",   "1.0"))
+    total = (
+        comp["tendencia"]*PESO_TENDENCIA +
+        comp["momento"]*PESO_MOMENTO +
+        comp["volume"]*PESO_VOLUME +
+        comp["volatilidade"]*PESO_VOLATILIDADE +
+        comp["confluencia"]*PESO_CONFLUENCIA
+    )
+    return round(min(100.0, total), 1)
+
+def gpt_formatar_linha_componentes(comp):
+    return (f"Tendência:{comp['tendencia']:.0f} | Momento:{comp['momento']:.0f} | "
+            f"Volume:{comp['volume']:.0f} | Volatilidade:{comp['volatilidade']:.0f} | "
+            f"Confluência:{comp['confluencia']:.0f}")
+
+def gpt_obter_score_100(df):
+    """Retorna (score_100, componentes, texto_confluencias)"""
+    comp = gpt_comp_calcular(df)
+    score_100 = gpt_comp_score_100(comp)
+    confs = []
+    try:
+        if bool(df.get("vwap_ok", False).iloc[-1]):    confs.append("acima da VWAP")
+    except Exception:
+        pass
+    try:
+        if bool(df.get("bb_squeeze", False).iloc[-1]): confs.append("Bandas comprimidas")
+    except Exception:
+        pass
+    confs_txt = "; ".join(confs) if confs else "—"
+    return score_100, comp, confs_txt
+
+# (A) Macro único por ciclo — enviar 1x no começo
+_GPT_MACRO_ENVIADO = False
+def gpt_macro_coletar_dados():
+    import requests, logging
+    dados = {"total_cap": "-", "btc_dom": "-", "fng": "-", "agenda": "-"}
+    try:
+        cg = requests.get("https://api.coingecko.com/api/v3/global", timeout=8).json()
+        total_cap = cg["data"]["total_market_cap"].get("usd")
+        btc_dom   = cg["data"]["market_cap_percentage"].get("btc")
+        if total_cap:
+            dados["total_cap"] = f"${total_cap:,.0f}"
+        if btc_dom is not None:
+            dados["btc_dom"] = f"{btc_dom:.1f}%"
+    except Exception as e:
+        logging.warning(f"Falha CoinGecko (macro): {e}")
+    try:
+        fng = requests.get("https://api.alternative.me/fng/?limit=1", timeout=6).json()
+        item = fng["data"][0]
+        dados["fng"] = f"{item['value']} ({item['value_classification']})"
+    except Exception as e:
+        logging.warning(f"Falha Fear&Greed (macro): {e}")
+    return dados
+
+def gpt_macro_enviar_uma_vez(dados_macro: dict):
+    global _GPT_MACRO_ENVIADO
+    if _GPT_MACRO_ENVIADO:
+        return
+    texto = (
+        "🌍 CONTEXTO MACRO\n"
+        f"• Cap. Total: {dados_macro.get('total_cap','-')}\n"
+        f"• Domínio BTC: {dados_macro.get('btc_dom','-')}\n"
+        f"• Fear & Greed: {dados_macro.get('fng','-')}\n"
+        f"• Agenda: {dados_macro.get('agenda','-')}\n"
+    )
+    try:
+        enviar_telegram(texto)
+    except Exception:
+        print(texto)
+    _GPT_MACRO_ENVIADO = True
+
+# (D) Filtro de liquidez — média de volume 30d com dados diários
+def gpt_liq_filtrar_por_media_30d(exchange, pares: list, minimo: float) -> list:
+    import pandas as _pd, logging
+    aprovados, reprovados = [], []
+    for par in pares:
+        try:
+            ohlcv = exchange.fetch_ohlcv(par, '1d', limit=60)
+            df_d = _pd.DataFrame(ohlcv, columns=['timestamp','open','high','low','close','volume'])
+            media30 = float(_pd.to_numeric(df_d["volume"], errors="coerce").tail(30).mean())
+            (aprovados if media30 >= minimo else reprovados).append(par)
+        except Exception as e:
+            logging.warning(f"Liquidez: não avaliei {par} ({e}). Mantendo (fail-open).")
+            aprovados.append(par)
+    logging.info("Liquidez: aprovados=%d | reprovados=%d | mínimo=%.0f", len(aprovados), len(reprovados), minimo)
+    return aprovados
+# ============================== [GPT] FIM SUPORTES ==============================
