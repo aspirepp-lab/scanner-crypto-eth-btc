@@ -129,7 +129,10 @@ def analisar_multiplos_timeframes(exchange, par):
             if not validar_dados(df, f"{par}_{tf}"):
                 resultados[tf] = {'status': 'dados_invalidos'}
                 continue
-                
+        except Exception as e:
+        logging.error(f"Falha ao preparar dados ({par}, {tf}): {e}")
+        resultados[tf] = {"status": "erro", "mensagem": str(e)}
+        continue
 def calcular_indicadores_completos(df):
     """
     Calcula o conjunto completo de indicadores.
