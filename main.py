@@ -126,11 +126,11 @@ def analisar_multiplos_timeframes(exchange, par):
             df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
             df = limpar_dados(df)
             # Sanitização extra — evita séries inválidas para os indicadores
-df[['open','high','low','close','volume']] = df[['open','high','low','close','volume']].apply(pd.to_numeric, errors='coerce')
-df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=['open','high','low','close','volume']).reset_index(drop=True)
-if len(df) < 100:
-    resultados[tf] = {"status": "dados_insuficientes"}
-    continue
+        df[['open','high','low','close','volume']] = df[['open','high','low','close','volume']].apply(pd.to_numeric, errors='coerce')
+        df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=['open','high','low','close','volume']).reset_index(drop=True)
+        if len(df) < 100:
+            resultados[tf] = {"status": "dados_insuficientes"}
+            continue
             if not validar_dados(df, f"{par}_{tf}"):
                 resultados[tf] = {'status': 'dados_invalidos'}
                 continue
