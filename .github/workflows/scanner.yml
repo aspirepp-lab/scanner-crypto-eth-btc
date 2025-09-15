@@ -22,10 +22,26 @@ jobs:
     env:
       # Ajusta timezone para logs coerentes com Brasília
       TZ: America/Sao_Paulo
-      # (Opcional) Secrets usados pelo script, se aplicável:
+
+      # (Opcional) Secrets usados pelo script
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+
+      # ====== FLAGS (ligar/desligar recursos do main.py) ======
+      ATIVAR_MACRO_UNICO: "true"
+      ATIVAR_SCORE_COMPONENTES: "true"
+      ATIVAR_VWAP: "true"
+      ATIVAR_BBWIDTH: "true"
+      ATIVAR_FILTRO_LIQUIDEZ: "true"
+      LIQ_MINIMO_30D: "1000000"
+
+      # Pesos do score 0–100
+      PESO_TENDENCIA: "1.0"
+      PESO_MOMENTO: "1.0"
+      PESO_VOLUME: "1.0"
+      PESO_VOLATILIDADE: "1.0"
+      PESO_CONFLUENCIA: "1.0"
 
     steps:
       - name: 🏁 Checkout Repository
@@ -49,7 +65,7 @@ jobs:
       - name: 🔎 Show versions
         run: |
           python - << 'PY'
-          import sys, pandas as pd, importlib
+          import sys, importlib
           print("Python:", sys.version)
           for m in ("ccxt","pandas","ta","pandas_ta","requests"):
               try:
@@ -98,6 +114,8 @@ jobs:
           elif [ -f scanner.py ]; then EP=scanner.py;
           else echo "❌ Nenhum entrypoint encontrado (main.py/scanner.py)."; exit 1; fi
           echo "Entrypoint: $EP"
+          echo "🔧 Flags -> MACRO=$ATIVAR_MACRO_UNICO SCORE=$ATIVAR_SCORE_COMPONENTES VWAP=$ATIVAR_VWAP BBWIDTH=$ATIVAR_BBWIDTH LIQ=$ATIVAR_FILTRO_LIQUIDEZ MIN_LIQ=$LIQ_MINIMO_30D"
+          echo "🔧 Pesos  -> TEND=$PESO_TENDENCIA MOM=$PESO_MOMENTO VOL=$PESO_VOLUME VOLAT=$PESO_VOLATILIDADE CONF=$PESO_CONFLUENCIA"
           python "$EP"
 
       - name: 📤 Upload Artifacts (logs, relatórios)
