@@ -33,8 +33,8 @@ jobs:
       ATIVAR_SCORE_COMPONENTES: "true"
       ATIVAR_VWAP: "true"
       ATIVAR_BBWIDTH: "true"
-      ATIVAR_FILTRO_LIQUIDEZ: "true"
-      LIQ_MINIMO_30D: "1000000"
+      ATIVAR_FILTRO_LIQUIDEZ: "false"
+      LIQ_MINIMO_30D: "0"
 
       # Pesos do score 0–100
       PESO_TENDENCIA: "1.0"
