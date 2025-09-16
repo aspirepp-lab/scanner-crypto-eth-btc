@@ -1,37 +1,35 @@
-import ccxt
-import pandas as pd
-import time
-import datetime
+# === Importações base
+import os, json, time, datetime, logging, warnings
 import requests
-import os
-import logging
-import json
-import warnings
+import numpy as np
+import pandas as pd
+import ccxt
+
+# === TA (indicadores técnicos)
+# Precisamos do módulo inteiro para usar ta.momentum/ta.volatility nas funções gpt_
+try:
+    import ta  # módulo completo
+except Exception:
+    ta = None
+
+# Você já usa algumas classes diretamente — ok manter:
 from ta.trend import EMAIndicator, MACD, ADXIndicator, SMAIndicator
 from ta.momentum import RSIIndicator, StochRSIIndicator
 from ta.volatility import AverageTrueRange, BollingerBands
 from ta.volume import OnBalanceVolumeIndicator
 
-# Correção para compatibilidade NumPy/Pandas
-import numpy as np
-import pandas as pd
-
-# Verificar versões e forçar compatibilidade
-try:
-    # Força recompilação de cache do pandas se necessário
-    pd.options.mode.chained_assignment = None
-    np.seterr(all='ignore')  # Suprimir warnings NumPy
-except:
-    pass
-# Suprimir warnings para logs limpos
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*invalid value encountered.*')
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by zero.*')
-
+# === pandas-ta (opcional; fallback para cálculo manual)
 try:
     import pandas_ta as pta
-except ImportError:
+except Exception:
     print("⚠️ pandas_ta não disponível, usando cálculo manual")
     pta = None
+
+# === Ajustes de compatibilidade e limpeza de avisos
+pd.options.mode.chained_assignment = None
+np.seterr(all='ignore')
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*invalid value encountered.*')
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by zero.*')
 
 # ===============================
 # === CONFIGURAÇÕES AVANÇADAS
@@ -1578,7 +1576,240 @@ def executar_scanner_avancado():
             enviar_telegram(mensagem_erro)
 
         return False
+# ============================== [GPT] SUPORTES ==============================
+# (B) Pontuação 0–100 com componentes + resumo de “confluências”
+def gpt_comp_calcular(df):
+    """
+    Calcula componentes normalizados (0–1):
+      • tend: tendência (EMAs e posição do preço)
+      • mom:  momentum (RSI)
+      • vol:  volume relativo (vs. média 20)
+      • volat:volatilidade (largura BB/σ)
+      • conf: confiabilidade (tamanho da amostra)
+    Retorna: dict com chaves {'tend','mom','vol','volat','conf'} em [0,1].
+    """
+    if df is None or len(df) == 0:
+        return {"tend": 0.0, "mom": 0.0, "vol": 0.0, "volat": 0.0, "conf": 0.0}
 
+    d = df.copy()
+
+    # Garante colunas numéricas básicas
+    for col in ("open", "high", "low", "close", "volume"):
+        if col not in d:
+            d[col] = np.nan
+        d[col] = pd.to_numeric(d[col], errors="coerce")
+
+    # EMAs (se não existirem)
+    if "ema9" not in d:
+        d["ema9"] = d["close"].ewm(span=9, adjust=False).mean()
+    if "ema21" not in d:
+        d["ema21"] = d["close"].ewm(span=21, adjust=False).mean()
+    if "ema50" not in d:
+        d["ema50"] = d["close"].ewm(span=50, adjust=False).mean()
+
+    # RSI (se possível)
+    if "rsi" not in d:
+        try:
+            if ta is not None:
+                d["rsi"] = ta.momentum.RSIIndicator(d["close"], window=14).rsi()
+            else:
+                # fallback simples (diferenças positivas/negativas)
+                delta = d["close"].diff()
+                up = delta.clip(lower=0).ewm(alpha=1/14, adjust=False).mean()
+                down = (-delta.clip(upper=0)).ewm(alpha=1/14, adjust=False).mean()
+                rs = up / (down + 1e-9)
+                d["rsi"] = 100 - (100 / (1 + rs))
+        except Exception:
+            d["rsi"] = np.nan
+
+    # Volume médio 20 (se não existir)
+    if "volume_sma20" not in d:
+        d["volume_sma20"] = d["volume"].rolling(20, min_periods=1).mean()
+
+    # Largura de bandas (se não existir)
+    if "bb_width" not in d:
+        try:
+            if ta is not None:
+                bb = ta.volatility.BollingerBands(d["close"], window=20, window_dev=2)
+                high = bb.bollinger_hband()
+                low = bb.bollinger_lband()
+                d["bb_width"] = (high - low) / d["close"]
+            else:
+                std = d["close"].rolling(20, min_periods=1).std()
+                d["bb_width"] = (4 * std) / d["close"]  # ~2σ p/ cada lado
+        except Exception:
+            d["bb_width"] = np.nan
+
+    r = d.iloc[-1]
+
+    # ---- Componentes normalizados 0–1
+    # Tendência: EMAs em ordem e preço acima de EMA50
+    conds = [
+        float(r.get("ema9", np.nan) > r.get("ema21", np.nan)),
+        float(r.get("ema21", np.nan) > r.get("ema50", np.nan)),
+        float(r.get("close", np.nan) > r.get("ema50", np.nan)),
+    ]
+    tend = np.nanmean(conds)
+    if np.isnan(tend):
+        tend = 0.0
+
+    # Momentum: RSI centralizado (30–70)
+    rsi = float(r.get("rsi", np.nan))
+    mom = 0.0 if np.isnan(rsi) else np.clip((rsi - 30.0) / 40.0, 0.0, 1.0)
+
+    # Volume relativo vs. média (satura em 2x)
+    v = float(r.get("volume", np.nan))
+    vma = float(r.get("volume_sma20", np.nan))
+    vol = 0.0 if (np.isnan(v) or np.isnan(vma) or vma <= 0) else np.clip(v / vma, 0.0, 2.0) / 2.0
+
+    # Volatilidade (BB width) – 0.08 ~ “alto”
+    bb = float(r.get("bb_width", np.nan))
+    volat = 0.0 if np.isnan(bb) else np.clip(bb / 0.08, 0.0, 1.0)
+
+    # Confiabilidade: tamanho da amostra (>=200 candles => 1.0)
+    conf = np.clip(len(d) / 200.0, 0.0, 1.0)
+
+    return {"tend": float(tend), "mom": float(mom), "vol": float(vol), "volat": float(volat), "conf": float(conf)}
+
+
+def gpt_comp_score_100(comp, pesos=None):
+    """
+    Converte os componentes em uma pontuação 0–100 com pesos.
+    Se 'pesos' não for informado, busca em variáveis de ambiente
+    (PESO_TEND, PESO_MOM, PESO_VOL, PESO_VOLAT, PESO_CONF) ou usa 1.0.
+    """
+    if pesos is None:
+        try:
+            pesos = {
+                "tend": float(os.getenv("PESO_TEND", "1")),
+                "mom": float(os.getenv("PESO_MOM", "1")),
+                "vol": float(os.getenv("PESO_VOL", "1")),
+                "volat": float(os.getenv("PESO_VOLAT", "1")),
+                "conf": float(os.getenv("PESO_CONF", "1")),
+            }
+        except Exception:
+            pesos = {"tend": 1.0, "mom": 1.0, "vol": 1.0, "volat": 1.0, "conf": 1.0}
+
+    num = 0.0
+    den = 0.0
+    for k, w in pesos.items():
+        v = float(comp.get(k, 0.0))
+        num += w * v
+        den += abs(w)
+    base = 0.0 if den == 0 else num / den  # 0–1
+    return int(round(100 * np.clip(base, 0.0, 1.0)))
+
+
+def gpt_comp_resumir(df):
+    """
+    Retorna (score_100, componentes_dict, texto_confluencias).
+    Confluências checadas:
+      • vwap_ok (último candle acima da VWAP)
+      • bb_squeeze (compressão de Bandas de Bollinger)
+    """
+    comp = gpt_comp_calcular(df)
+    score_100 = gpt_comp_score_100(comp)
+
+    confs = []
+    try:
+        v_ok = df.get("vwap_ok", pd.Series([False])).iloc[-1]
+        if bool(v_ok):
+            confs.append("acima da VWAP")
+    except Exception:
+        pass
+
+    try:
+        bb_sq = df.get("bb_squeeze", pd.Series([False])).iloc[-1]
+        if bool(bb_sq):
+            confs.append("Bandas comprimidas")
+    except Exception:
+        pass
+
+    confs_txt = "; ".join(confs) if confs else "—"
+    return score_100, comp, confs_txt
+
+
+# (A) Macro único por ciclo — enviar 1x no começo
+_GPT_MACRO_ENVIADO = False
+
+def gpt_macro_coletar_dados():
+    """
+    Coleta contexto macro (cap total, domínio BTC e Fear&Greed).
+    Retorna dict com chaves: total_cap, btc_dom, fng, agenda.
+    Obs.: 'agenda' fica como '-' aqui (placeholder), pois depende
+    de fontes específicas caso deseje adicionar no futuro.
+    """
+    dados = {"total_cap": "-", "btc_dom": "-", "fng": "-", "agenda": "-"}
+    try:
+        cg = requests.get("https://api.coingecko.com/api/v3/global", timeout=8).json()
+        total_cap = cg["data"]["total_market_cap"].get("usd")
+        btc_dom = cg["data"]["market_cap_percentage"].get("btc")
+        if total_cap:
+            dados["total_cap"] = f"${total_cap:,.0f}"
+        if btc_dom is not None:
+            dados["btc_dom"] = f"{btc_dom:.1f}%"
+    except Exception as e:
+        logging.warning(f"Falha CoinGecko (macro): {e}")
+
+    try:
+        fng = requests.get("https://api.alternative.me/fng/?limit=1", timeout=6).json()
+        item = fng["data"][0]
+        dados["fng"] = f"{item['value']} ({item['value_classification']})"
+    except Exception as e:
+        logging.warning(f"Falha Fear&Greed (macro): {e}")
+
+    return dados
+
+
+def gpt_macro_enviar_uma_vez(dados_macro: dict):
+    """
+    Envia o bloco macro apenas uma vez por execução (controle global).
+    Exige a função enviar_telegram(texto).
+    """
+    global _GPT_MACRO_ENVIADO
+    if _GPT_MACRO_ENVIADO:
+        return
+
+    texto = (
+        "🌍 CONTEXTO MACRO\n"
+        f"• Cap. Total: {dados_macro.get('total_cap','-')}\n"
+        f"• Domínio BTC: {dados_macro.get('btc_dom','-')}\n"
+        f"• Fear & Greed: {dados_macro.get('fng','-')}\n"
+        f"• Agenda: {dados_macro.get('agenda','-')}\n"
+    )
+    try:
+        enviar_telegram(texto)
+    except Exception:
+        print(texto)
+
+    _GPT_MACRO_ENVIADO = True
+
+
+# (D) Filtro de liquidez — média de volume 30d com dados diários (fail-open)
+def gpt_liq_filtrar_por_media_30d(exchange, pares: list, minimo: float) -> list:
+    """
+    Para cada par em 'pares', consulta OHLCV diário (1d), calcula a
+    média de 'volume' dos últimos 30 dias e mantém somente aqueles
+    com média >= 'minimo'. Em caso de erro, mantém o par (fail-open).
+    """
+    aprovados, reprovados = [], []
+    for par in pares:
+        try:
+            ohlcv = exchange.fetch_ohlcv(par, '1d', limit=60)
+            d = pd.DataFrame(ohlcv, columns=['timestamp','open','high','low','close','volume'])
+            d["volume"] = pd.to_numeric(d["volume"], errors="coerce")
+            media30 = float(d["volume"].tail(30).mean())
+            (aprovados if media30 >= minimo else reprovados).append(par)
+        except Exception as e:
+            logging.warning(f"Liquidez: não avaliei {par} ({e}). Mantendo (fail-open).")
+            aprovados.append(par)
+
+    logging.info(
+        "Liquidez: aprovados=%d | reprovados=%d | mínimo=%.0f",
+        len(aprovados), len(reprovados), minimo
+    )
+    return aprovados
+# ============================== [GPT] FIM SUPORTES ==============================
 # ===============================
 # === EXECUÇÃO PRINCIPAL
 # ===============================
@@ -1598,143 +1829,3 @@ if __name__ == "__main__":
         print("💥 Scanner avançado falhou!")
         exit(1)
         # ============================== [GPT] SUPORTES — ADICIONAR NO FINAL ==============================
-import os
-
-# (B) Pontuação 0–100 com componentes (tendência, momento, volume, volatilidade, confluência)
-def gpt_comp_calcular(df):
-    import pandas as _pd
-    close = _pd.to_numeric(df["close"], errors="coerce")
-    media50 = close.rolling(50, min_periods=1).mean()
-    media9  = close.rolling(9,  min_periods=1).mean()
-
-    tendencia = 20.0 if close.iloc[-1] > media50.iloc[-1] else 8.0
-    momento   = 20.0 if close.iloc[-1] > media9.iloc[-1]  else 10.0
-
-    # volume_sma: usa sua coluna se existir; senão calcula
-    try:
-        vol_sma20 = float(df["volume_sma"].iloc[-1])
-    except Exception:
-        vol_sma20 = float(df["volume"].rolling(20, min_periods=1).mean().iloc[-1])
-    vol_atual = float(df["volume"].iloc[-1])
-    vol_rel   = vol_atual / max(1.0, vol_sma20)
-    volume    = 20.0 if vol_rel >= 1.5 else (10.0 if vol_rel >= 1.0 else 5.0)
-
-    # volatilidade via ATR%
-    atr_col = "atr"
-    if atr_col not in df.columns and "atr14" in df.columns:
-        atr_col = "atr14"
-    atr14 = float(df[atr_col].iloc[-1]) if atr_col in df.columns else 0.0
-    preco = float(close.iloc[-1])
-    vol_pct = (atr14 / preco) if preco > 0 else 0.0
-    volatil  = 15.0 if 0.01 <= vol_pct <= 0.04 else 8.0
-
-    conf = 0.0
-    try:
-        if bool(df.get("vwap_ok", False).iloc[-1]):    conf += 5.0
-    except Exception:
-        pass
-    try:
-        if bool(df.get("bb_squeeze", False).iloc[-1]): conf += 5.0
-    except Exception:
-        pass
-
-    return {
-        "tendencia": tendencia,
-        "momento": momento,
-        "volume": volume,
-        "volatilidade": volatil,
-        "confluencia": conf
-    }
-
-def gpt_comp_score_100(comp):
-    PESO_TENDENCIA     = float(os.getenv("PESO_TENDENCIA",     "1.0"))
-    PESO_MOMENTO       = float(os.getenv("PESO_MOMENTO",       "1.0"))
-    PESO_VOLUME        = float(os.getenv("PESO_VOLUME",        "1.0"))
-    PESO_VOLATILIDADE  = float(os.getenv("PESO_VOLATILIDADE",  "1.0"))
-    PESO_CONFLUENCIA   = float(os.getenv("PESO_CONFLUENCIA",   "1.0"))
-    total = (
-        comp["tendencia"]*PESO_TENDENCIA +
-        comp["momento"]*PESO_MOMENTO +
-        comp["volume"]*PESO_VOLUME +
-        comp["volatilidade"]*PESO_VOLATILIDADE +
-        comp["confluencia"]*PESO_CONFLUENCIA
-    )
-    return round(min(100.0, total), 1)
-
-def gpt_formatar_linha_componentes(comp):
-    return (f"Tendência:{comp['tendencia']:.0f} | Momento:{comp['momento']:.0f} | "
-            f"Volume:{comp['volume']:.0f} | Volatilidade:{comp['volatilidade']:.0f} | "
-            f"Confluência:{comp['confluencia']:.0f}")
-
-def gpt_obter_score_100(df):
-    """Retorna (score_100, componentes, texto_confluencias)"""
-    comp = gpt_comp_calcular(df)
-    score_100 = gpt_comp_score_100(comp)
-    confs = []
-    try:
-        if bool(df.get("vwap_ok", False).iloc[-1]):    confs.append("acima da VWAP")
-    except Exception:
-        pass
-    try:
-        if bool(df.get("bb_squeeze", False).iloc[-1]): confs.append("Bandas comprimidas")
-    except Exception:
-        pass
-    confs_txt = "; ".join(confs) if confs else "—"
-    return score_100, comp, confs_txt
-
-# (A) Macro único por ciclo — enviar 1x no começo
-_GPT_MACRO_ENVIADO = False
-def gpt_macro_coletar_dados():
-    import requests, logging
-    dados = {"total_cap": "-", "btc_dom": "-", "fng": "-", "agenda": "-"}
-    try:
-        cg = requests.get("https://api.coingecko.com/api/v3/global", timeout=8).json()
-        total_cap = cg["data"]["total_market_cap"].get("usd")
-        btc_dom   = cg["data"]["market_cap_percentage"].get("btc")
-        if total_cap:
-            dados["total_cap"] = f"${total_cap:,.0f}"
-        if btc_dom is not None:
-            dados["btc_dom"] = f"{btc_dom:.1f}%"
-    except Exception as e:
-        logging.warning(f"Falha CoinGecko (macro): {e}")
-    try:
-        fng = requests.get("https://api.alternative.me/fng/?limit=1", timeout=6).json()
-        item = fng["data"][0]
-        dados["fng"] = f"{item['value']} ({item['value_classification']})"
-    except Exception as e:
-        logging.warning(f"Falha Fear&Greed (macro): {e}")
-    return dados
-
-def gpt_macro_enviar_uma_vez(dados_macro: dict):
-    global _GPT_MACRO_ENVIADO
-    if _GPT_MACRO_ENVIADO:
-        return
-    texto = (
-        "🌍 CONTEXTO MACRO\n"
-        f"• Cap. Total: {dados_macro.get('total_cap','-')}\n"
-        f"• Domínio BTC: {dados_macro.get('btc_dom','-')}\n"
-        f"• Fear & Greed: {dados_macro.get('fng','-')}\n"
-        f"• Agenda: {dados_macro.get('agenda','-')}\n"
-    )
-    try:
-        enviar_telegram(texto)
-    except Exception:
-        print(texto)
-    _GPT_MACRO_ENVIADO = True
-
-# (D) Filtro de liquidez — média de volume 30d com dados diários
-def gpt_liq_filtrar_por_media_30d(exchange, pares: list, minimo: float) -> list:
-    import pandas as _pd, logging
-    aprovados, reprovados = [], []
-    for par in pares:
-        try:
-            ohlcv = exchange.fetch_ohlcv(par, '1d', limit=60)
-            df_d = _pd.DataFrame(ohlcv, columns=['timestamp','open','high','low','close','volume'])
-            media30 = float(_pd.to_numeric(df_d["volume"], errors="coerce").tail(30).mean())
-            (aprovados if media30 >= minimo else reprovados).append(par)
-        except Exception as e:
-            logging.warning(f"Liquidez: não avaliei {par} ({e}). Mantendo (fail-open).")
-            aprovados.append(par)
-    logging.info("Liquidez: aprovados=%d | reprovados=%d | mínimo=%.0f", len(aprovados), len(reprovados), minimo)
-    return aprovados
-# ============================== [GPT] FIM SUPORTES ==============================
