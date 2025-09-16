@@ -113,31 +113,51 @@ def limpar_dados(df):
 def analisar_multiplos_timeframes(exchange, par):
     """Analisa o mesmo par em múltiplos timeframes"""
     resultados = {}
-    
+
     for tf in TIMEFRAMES:
         try:
             print(f"    📈 Timeframe {tf}...")
             ohlcv = exchange.fetch_ohlcv(par, tf, limit=limite_candles)
-            
-            if len(ohlcv) < 100:
-                resultados[tf] = {'status': 'dados_insuficientes', 'candles': len(ohlcv)}
+
+            # Dados insuficientes do próprio fetch
+            if not ohlcv or len(ohlcv) < 100:
+                resultados[tf] = {"status": "dados_insuficientes", "candles": (len(ohlcv) if ohlcv else 0)}
                 continue
-                
-            df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+
+            # DataFrame base + limpeza
+            df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
             df = limpar_dados(df)
+
             # Sanitização extra — evita séries inválidas para os indicadores
-        df[['open','high','low','close','volume']] = df[['open','high','low','close','volume']].apply(pd.to_numeric, errors='coerce')
-        df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=['open','high','low','close','volume']).reset_index(drop=True)
-        if len(df) < 100:
-            resultados[tf] = {"status": "dados_insuficientes"}
-            continue
-            if not validar_dados(df, f"{par}_{tf}"):
-                resultados[tf] = {'status': 'dados_invalidos'}
+            df[["open", "high", "low", "close", "volume"]] = df[["open", "high", "low", "close", "volume"]].apply(pd.to_numeric, errors="coerce")
+            df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=["open", "high", "low", "close", "volume"]).reset_index(drop=True)
+
+            # Garante amostra mínima após sanitização
+            if len(df) < 100:
+                resultados[tf] = {"status": "dados_insuficientes", "candles": len(df)}
                 continue
+
+            # Validação final
+            if not validar_dados(df, f"{par}_{tf}"):
+                resultados[tf] = {"status": "dados_invalidos"}
+                continue
+
+            # (opcional) cálculo de indicadores completos se existir a função
+            try:
+                df = calcular_indicadores_completos(df)
+            except Exception:
+                # se der erro nos indicadores, ainda assim devolve o DF básico
+                pass
+
+            resultados[tf] = {"status": "ok", "df": df}
+
         except Exception as e:
             logging.error(f"Falha ao preparar dados ({par}, {tf}): {e}")
             resultados[tf] = {"status": "erro", "mensagem": str(e)}
-        continue
+            continue
+
+    return resultados
+    
 def calcular_indicadores_completos(df):
     """
     Calcula o conjunto completo de indicadores.
