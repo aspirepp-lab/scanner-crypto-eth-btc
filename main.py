@@ -109,15 +109,14 @@ def limpar_dados(df):
 # ===============================
 
 def analisar_multiplos_timeframes(exchange, par):
-    """Analisa o mesmo par em múltiplos timeframes"""
+    """Analisa o mesmo par em múltiplos timeframes e retorna DF + métricas por TF."""
     resultados = {}
-
     for tf in TIMEFRAMES:
         try:
             print(f"    📈 Timeframe {tf}...")
             ohlcv = exchange.fetch_ohlcv(par, tf, limit=limite_candles)
 
-            # Dados insuficientes do próprio fetch
+            # Verificação inicial
             if not ohlcv or len(ohlcv) < 100:
                 resultados[tf] = {"status": "dados_insuficientes", "candles": (len(ohlcv) if ohlcv else 0)}
                 continue
@@ -126,28 +125,52 @@ def analisar_multiplos_timeframes(exchange, par):
             df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
             df = limpar_dados(df)
 
-            # Sanitização extra — evita séries inválidas para os indicadores
-            df[["open", "high", "low", "close", "volume"]] = df[["open", "high", "low", "close", "volume"]].apply(pd.to_numeric, errors="coerce")
-            df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=["open", "high", "low", "close", "volume"]).reset_index(drop=True)
+            # Sanitização extra
+            cols = ["open", "high", "low", "close", "volume"]
+            df[cols] = df[cols].apply(pd.to_numeric, errors="coerce")
+            df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=cols).reset_index(drop=True)
 
-            # Garante amostra mínima após sanitização
+            # Amostra mínima
             if len(df) < 100:
                 resultados[tf] = {"status": "dados_insuficientes", "candles": len(df)}
                 continue
 
-            # Validação final
+            # Indicadores
+            try:
+                df = calcular_indicadores_completos(df)
+            except Exception as e:
+                # Ainda retorna DF mínimo em caso de falha
+                logging.warning(f"Indicadores falharam em {par} {tf}: {e}")
+
             if not validar_dados(df, f"{par}_{tf}"):
                 resultados[tf] = {"status": "dados_invalidos"}
                 continue
 
-            # (opcional) cálculo de indicadores completos se existir a função
-            try:
-                df = calcular_indicadores_completos(df)
-            except Exception:
-                # se der erro nos indicadores, ainda assim devolve o DF básico
-                pass
+            # ----- Métricas necessárias para os setups/alerta -----
+            preco = float(df["close"].iloc[-1])
+            tendencia = determinar_tendencia(df)
+            forca = calcular_forca_tendencia(df)
+            volatilidade = calcular_volatilidade(df)
 
-            resultados[tf] = {"status": "ok", "df": df}
+            # Alguns campos usados por mensagens/setups:
+            rsi_val = float(df["rsi"].iloc[-1]) if "rsi" in df.columns else float("nan")
+            macd_val = float(df["macd"].iloc[-1]) if "macd" in df.columns else float("nan")
+            macd_sig = float(df["macd_signal"].iloc[-1]) if "macd_signal" in df.columns else float("nan")
+            vol_ma = df["volume"].rolling(20, min_periods=1).mean().iloc[-1]
+            volume_ratio = float(df["volume"].iloc[-1] / vol_ma) if vol_ma else 0.0
+
+            resultados[tf] = {
+                "status": "ok",
+                "df": df,
+                "preco": preco,
+                "tendencia": tendencia,
+                "forca": forca,
+                "volatilidade": volatilidade,
+                "rsi": rsi_val,
+                "macd": macd_val,
+                "macd_signal": macd_sig,
+                "volume_ratio": volume_ratio,
+            }
 
         except Exception as e:
             logging.error(f"Falha ao preparar dados ({par}, {tf}): {e}")
@@ -155,7 +178,6 @@ def analisar_multiplos_timeframes(exchange, par):
             continue
 
     return resultados
-    
 def calcular_indicadores_completos(df):
     """
     Calcula o conjunto completo de indicadores.
@@ -359,70 +381,6 @@ def calcular_volatilidade(df):
             
     except Exception as e:
         return "indefinida"
-
-# ===============================
-# === INDICADORES COMPLETOS
-# ===============================
-
-def calcular_indicadores_completos(df):
-    """Calcula conjunto completo de indicadores"""
-    try:
-        close = df['close']
-        high = df['high']
-        low = df['low']
-        volume = df['volume']
-        
-        # Médias móveis múltiplas
-        df['ema9'] = EMAIndicator(close, 9).ema_indicator()
-        df['ema21'] = EMAIndicator(close, 21).ema_indicator()
-        df['ema50'] = EMAIndicator(close, 50).ema_indicator()
-        df['ema200'] = EMAIndicator(close, 200).ema_indicator()
-        df['sma20'] = SMAIndicator(close, 20).sma_indicator()
-        
-        # Momentum
-        df['rsi'] = RSIIndicator(close, 14).rsi()
-        
-        # StochRSI
-        try:
-            stoch_rsi = StochRSIIndicator(close, 14, 3, 3)
-            df['stoch_rsi'] = stoch_rsi.stochrsi()
-        except:
-            df['stoch_rsi'] = df['rsi'] / 100
-        
-        # Tendência
-        macd = MACD(close)
-        df['macd'] = macd.macd()
-        df['macd_signal'] = macd.macd_signal()
-        df['macd_histogram'] = macd.macd_diff()
-        
-        df['adx'] = ADXIndicator(high, low, close, 14).adx()
-        
-        # Volatilidade
-        df['atr'] = AverageTrueRange(high, low, close, 14).average_true_range()
-        
-        # Bollinger Bands
-        bollinger = BollingerBands(close, 20, 2)
-        df['bb_upper'] = bollinger.bollinger_hband()
-        df['bb_middle'] = bollinger.bollinger_mavg()
-        df['bb_lower'] = bollinger.bollinger_lband()
-        
-        # Volume
-        df['obv'] = OnBalanceVolumeIndicator(close, volume).on_balance_volume()
-        df['volume_sma'] = VolumeSMAIndicator(volume, 20).volume_sma()
-        
-        # Supertrend
-        df = calcular_supertrend(df)
-        
-        # Preencher NaN
-        for col in df.columns:
-            if df[col].dtype in ['float64', 'int64'] and df[col].isna().sum() > 0:
-                df[col] = df[col].fillna(method='bfill').fillna(method='ffill')
-        
-        return df
-        
-    except Exception as e:
-        logging.error(f"Erro ao calcular indicadores: {e}")
-        return df
 
 def calcular_supertrend(df, period=10, multiplier=3):
     """Supertrend com proteções"""
@@ -1671,7 +1629,6 @@ def gpt_comp_calcular(df):
 
     return {"tend": float(tend), "mom": float(mom), "vol": float(vol), "volat": float(volat), "conf": float(conf)}
 
-
 def gpt_comp_score_100(comp, pesos=None):
     """
     Converte os componentes em uma pontuação 0–100 com pesos.
@@ -1698,7 +1655,6 @@ def gpt_comp_score_100(comp, pesos=None):
         den += abs(w)
     base = 0.0 if den == 0 else num / den  # 0–1
     return int(round(100 * np.clip(base, 0.0, 1.0)))
-
 
 def gpt_comp_resumir(df):
     """
@@ -1727,7 +1683,6 @@ def gpt_comp_resumir(df):
 
     confs_txt = "; ".join(confs) if confs else "—"
     return score_100, comp, confs_txt
-
 
 # (A) Macro único por ciclo — enviar 1x no começo
 _GPT_MACRO_ENVIADO = False
@@ -1760,7 +1715,6 @@ def gpt_macro_coletar_dados():
 
     return dados
 
-
 def gpt_macro_enviar_uma_vez(dados_macro: dict):
     """
     Envia o bloco macro apenas uma vez por execução (controle global).
@@ -1783,7 +1737,6 @@ def gpt_macro_enviar_uma_vez(dados_macro: dict):
         print(texto)
 
     _GPT_MACRO_ENVIADO = True
-
 
 # (D) Filtro de liquidez — média de volume 30d com dados diários (fail-open)
 def gpt_liq_filtrar_por_media_30d(exchange, pares: list, minimo: float) -> list:
