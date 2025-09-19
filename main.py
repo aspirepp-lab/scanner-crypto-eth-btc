@@ -1157,7 +1157,7 @@ def enviar_alerta_avancado(par, analise_tf, setup_info):
         score_100 = None
         if os.getenv("ATIVAR_SCORE_COMPONENTES", "false").lower() == "true":
             try:
-                score_100, comp, confs_txt = gpt_obter_score_100(df_1h)
+                score_100, comp, confs_txt = gpt_comp_score_100(df_1h)
                 linha = gpt_formatar_linha_componentes(comp)
                 mensagem += (
                     f"🧮 Pontuação: {score_100}/100\n"
