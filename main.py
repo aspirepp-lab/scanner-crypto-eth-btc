@@ -1628,7 +1628,12 @@ def gpt_comp_calcular(df):
     conf = np.clip(len(d) / 200.0, 0.0, 1.0)
 
     return {"tend": float(tend), "mom": float(mom), "vol": float(vol), "volat": float(volat), "conf": float(conf)}
-
+    
+# --- compat: manter chamadas antigas funcionando ---
+def gpt_obter_score_100(comp):
+    # reaproveita a função nova
+    return gpt_comp_score_100(comp)
+    
 def gpt_comp_score_100(comp, pesos=None):
     """
     Converte os componentes em uma pontuação 0–100 com pesos.
