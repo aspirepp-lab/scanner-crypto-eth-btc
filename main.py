@@ -5,6 +5,40 @@ import numpy as np
 import pandas as pd
 import ccxt
 
+def obter_top_pares():
+    exchange = ccxt.binance({'enableRateLimit': True})
+    exchange.load_markets()
+
+    try:
+        resp = requests.get('https://api.coingecko.com/api/v3/coins/markets', params={
+            'vs_currency': 'usd',
+            'order': 'market_cap_desc',
+            'per_page': 50,
+            'page': 1,
+            'sparkline': 'false',
+        }, timeout=10)
+        resp.raise_for_status()
+        gecko_data = resp.json()
+    except Exception as e:
+        print(f"Erro ao obter dados de CoinGecko: {e}")
+        return ['BTC/USDT', 'ETH/USDT']  # Fallback seguro
+
+    top_cap = []
+    for coin in gecko_data:
+        symbol = (coin['symbol'] + '/USDT').upper()
+        if symbol in exchange.markets:
+            top_cap.append(symbol)
+        if len(top_cap) >= 15:
+            break
+
+    pares_usdt = [s for s in exchange.markets if s.endswith('/USDT')]
+    pares_volume = sorted(pares_usdt, key=lambda s: float(exchange.markets[s]['info']['quoteVolume']), reverse=True)
+
+    extras = [p for p in pares_volume if p not in top_cap][:5]
+
+    pares_final = top_cap + extras
+    print(f"Pares selecionados (dinâmicos): {pares_final}")
+    return pares_final
 # === TA (indicadores técnicos)
 # Precisamos do módulo inteiro para usar ta.momentum/ta.volatility nas funções gpt_
 try:
@@ -34,7 +68,7 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by 
 # ===============================
 # === CONFIGURAÇÕES AVANÇADAS
 # ===============================
-PARES_ALVOS = ['BTC/USDT', 'ETH/USDT']
+PARES_ALVOS = obter_top_pares ()
 TIMEFRAMES = ['1h', '4h']  # Múltiplos timeframes
 limite_candles = 200  # Mais dados para análise avançada
 TEMPO_REENVIO = 60 * 30
