@@ -62,7 +62,7 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by 
 # ===============================
 # === CONFIGURAÇÕES AVANÇADAS
 # ===============================
-PARES_ALVOS = obter_top_pares ()
+PARES_ALVOS = obter_pares_coingecko ()
 TIMEFRAMES = ['1h', '4h']  # Múltiplos timeframes
 limite_candles = 200  # Mais dados para análise avançada
 TEMPO_REENVIO = 60 * 30
