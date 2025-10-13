@@ -32,7 +32,7 @@ def obter_top_pares(top_cap=15, top_vol=5, quote="USDT"):
     return pares_final
 
 # Use assim para definir a lista principal (substitua sua PARES_ALVOS fixa):
-PARES_ALVOS = obter_pares_coingecko()
+PARES_ALVOS = obter_top_pares()
 # === TA (indicadores técnicos)
 # Precisamos do módulo inteiro para usar ta.momentum/ta.volatility nas funções gpt_
 try:
