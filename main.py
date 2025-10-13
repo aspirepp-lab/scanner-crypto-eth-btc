@@ -4,32 +4,36 @@ import requests
 import numpy as np
 import pandas as pd
 import ccxt
+import requests
 
-def obter_top_pares(top_cap=15, top_vol=5, quote="USDT"):
+def obter_pares_coingecko(top_cap=15, top_vol=5, quote="usdt"):
     url = 'https://api.coingecko.com/api/v3/coins/markets'
     params = {
-        'vs_currency': quote.lower(),   # "usdt"
+        'vs_currency': quote,
         'order': 'market_cap_desc',
         'per_page': 50,
-        'page': 1
+        'page': 1,
+        'sparkline': 'false',
     }
     r = requests.get(url, params=params, timeout=10)
     r.raise_for_status()
     moedas = r.json()
 
-    # Top 15 por capitalização
     top_cap_symbols = [entry['symbol'].upper() + quote.upper() for entry in moedas[:top_cap]]
 
-    # Top 5 por volume, excluindo as já selecionadas
     moedas_sorted_vol = sorted(moedas, key=lambda m: m['total_volume'], reverse=True)
     top_vol_symbols = []
     for entry in moedas_sorted_vol:
         par = entry['symbol'].upper() + quote.upper()
         if par not in top_cap_symbols and len(top_vol_symbols) < top_vol:
             top_vol_symbols.append(par)
+
     pares_final = top_cap_symbols + top_vol_symbols
     print("Pares selecionados:", pares_final)
     return pares_final
+
+PARES_ALVOS = obter_pares_coingecko()
+
 
 # Use assim para definir a lista principal (substitua sua PARES_ALVOS fixa):
 PARES_ALVOS = obter_top_pares()
@@ -62,7 +66,7 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by 
 # ===============================
 # === CONFIGURAÇÕES AVANÇADAS
 # ===============================
-PARES_ALVOS = obter_top_pares ()
+PARES_ALVOS = obter_pares_coingecko ()
 TIMEFRAMES = ['1h', '4h']  # Múltiplos timeframes
 limite_candles = 200  # Mais dados para análise avançada
 TEMPO_REENVIO = 60 * 30
