@@ -5,40 +5,34 @@ import numpy as np
 import pandas as pd
 import ccxt
 
-def obter_top_pares():
-    exchange = ccxt.binance({'enableRateLimit': True})
-    exchange.load_markets()
+def obter_pares_coingecko(top_cap=15, top_vol=5, quote="USDT"):
+    url = 'https://api.coingecko.com/api/v3/coins/markets'
+    params = {
+        'vs_currency': quote.lower(),   # "usdt"
+        'order': 'market_cap_desc',
+        'per_page': 50,
+        'page': 1
+    }
+    r = requests.get(url, params=params, timeout=10)
+    r.raise_for_status()
+    moedas = r.json()
 
-    try:
-        resp = requests.get('https://api.coingecko.com/api/v3/coins/markets', params={
-            'vs_currency': 'usd',
-            'order': 'market_cap_desc',
-            'per_page': 50,
-            'page': 1,
-            'sparkline': 'false',
-        }, timeout=10)
-        resp.raise_for_status()
-        gecko_data = resp.json()
-    except Exception as e:
-        print(f"Erro ao obter dados de CoinGecko: {e}")
-        return ['BTC/USDT', 'ETH/USDT']  # Fallback seguro
+    # Top 15 por capitalização
+    top_cap_symbols = [entry['symbol'].upper() + quote.upper() for entry in moedas[:top_cap]]
 
-    top_cap = []
-    for coin in gecko_data:
-        symbol = (coin['symbol'] + '/USDT').upper()
-        if symbol in exchange.markets:
-            top_cap.append(symbol)
-        if len(top_cap) >= 15:
-            break
-
-    pares_usdt = [s for s in exchange.markets if s.endswith('/USDT')]
-    pares_volume = sorted(pares_usdt, key=lambda s: float(exchange.markets[s]['info']['quoteVolume']), reverse=True)
-
-    extras = [p for p in pares_volume if p not in top_cap][:5]
-
-    pares_final = top_cap + extras
-    print(f"Pares selecionados (dinâmicos): {pares_final}")
+    # Top 5 por volume, excluindo as já selecionadas
+    moedas_sorted_vol = sorted(moedas, key=lambda m: m['total_volume'], reverse=True)
+    top_vol_symbols = []
+    for entry in moedas_sorted_vol:
+        par = entry['symbol'].upper() + quote.upper()
+        if par not in top_cap_symbols and len(top_vol_symbols) < top_vol:
+            top_vol_symbols.append(par)
+    pares_final = top_cap_symbols + top_vol_symbols
+    print("Pares selecionados:", pares_final)
     return pares_final
+
+# Use assim para definir a lista principal (substitua sua PARES_ALVOS fixa):
+PARES_ALVOS = obter_pares_coingecko()
 # === TA (indicadores técnicos)
 # Precisamos do módulo inteiro para usar ta.momentum/ta.volatility nas funções gpt_
 try:
