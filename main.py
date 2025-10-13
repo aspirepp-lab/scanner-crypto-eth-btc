@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import ccxt
 
-def obter_pares_coingecko(top_cap=15, top_vol=5, quote="USDT"):
+def obter_top_pares(top_cap=15, top_vol=5, quote="USDT"):
     url = 'https://api.coingecko.com/api/v3/coins/markets'
     params = {
         'vs_currency': quote.lower(),   # "usdt"
@@ -62,7 +62,7 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by 
 # ===============================
 # === CONFIGURAÇÕES AVANÇADAS
 # ===============================
-PARES_ALVOS = obter_pares_coingecko ()
+PARES_ALVOS = obter_top_pares ()
 TIMEFRAMES = ['1h', '4h']  # Múltiplos timeframes
 limite_candles = 200  # Mais dados para análise avançada
 TEMPO_REENVIO = 60 * 30
@@ -74,7 +74,7 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 if not TOKEN or not CHAT_ID:
     print("⚠️ AVISO: Configure TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID para receber alertas")
     TOKEN = "dummy_token"
-    CHAT_ID = "dummy_chat"
+    CHAT_D = "dummy_chat"
 
 # Arquivos de dados
 ARQUIVO_SINAIS_MONITORADOS = 'sinais_monitorados.json'
