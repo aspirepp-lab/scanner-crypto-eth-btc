@@ -4,39 +4,7 @@ import requests
 import numpy as np
 import pandas as pd
 import ccxt
-import requests
 
-def obter_pares_coingecko(top_cap=15, top_vol=5, quote="usdt"):
-    url = 'https://api.coingecko.com/api/v3/coins/markets'
-    params = {
-        'vs_currency': quote,
-        'order': 'market_cap_desc',
-        'per_page': 50,
-        'page': 1,
-        'sparkline': 'false',
-    }
-    r = requests.get(url, params=params, timeout=10)
-    r.raise_for_status()
-    moedas = r.json()
-
-    top_cap_symbols = [entry['symbol'].upper() + quote.upper() for entry in moedas[:top_cap]]
-
-    moedas_sorted_vol = sorted(moedas, key=lambda m: m['total_volume'], reverse=True)
-    top_vol_symbols = []
-    for entry in moedas_sorted_vol:
-        par = entry['symbol'].upper() + quote.upper()
-        if par not in top_cap_symbols and len(top_vol_symbols) < top_vol:
-            top_vol_symbols.append(par)
-
-    pares_final = top_cap_symbols + top_vol_symbols
-    print("Pares selecionados:", pares_final)
-    return pares_final
-
-PARES_ALVOS = obter_pares_coingecko()
-
-
-# Use assim para definir a lista principal (substitua sua PARES_ALVOS fixa):
-PARES_ALVOS = obter_top_pares()
 # === TA (indicadores técnicos)
 # Precisamos do módulo inteiro para usar ta.momentum/ta.volatility nas funções gpt_
 try:
@@ -66,7 +34,7 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by 
 # ===============================
 # === CONFIGURAÇÕES AVANÇADAS
 # ===============================
-PARES_ALVOS = obter_pares_coingecko ()
+PARES_ALVOS = ['BTC/USDT', 'ETH/USDT']
 TIMEFRAMES = ['1h', '4h']  # Múltiplos timeframes
 limite_candles = 200  # Mais dados para análise avançada
 TEMPO_REENVIO = 60 * 30
@@ -78,7 +46,7 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 if not TOKEN or not CHAT_ID:
     print("⚠️ AVISO: Configure TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID para receber alertas")
     TOKEN = "dummy_token"
-    CHAT_D = "dummy_chat"
+    CHAT_ID = "dummy_chat"
 
 # Arquivos de dados
 ARQUIVO_SINAIS_MONITORADOS = 'sinais_monitorados.json'
