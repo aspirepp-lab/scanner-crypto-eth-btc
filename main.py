@@ -1423,46 +1423,46 @@ def enviar_alerta_avancado(par, analise_tf, setup_info):
             )
         mensagem += explicacao
 
-# === SEMANA 1: VALIDAÇÕES E REGISTRO ===
-    logger = logging.getLogger('scanner')
-    
-    # Extrair dados para validação
-    setup_nome = setup_info.get('setup', 'Desconhecido')
-    
-    # Item 1.2: Validar antes de enviar
-    if not validar_antes_enviar(par, setup_nome, score, preco, stop, alvo):
-        logger.warning(f"❌ Sinal reprovado nas validações: {par}")
-        return False
-    
-    # Item 1.5: Verificar throttle
-    if not verificar_throttle(par, tempo_reenvio_min=TEMPO_REENVIO):
-        return False
-    
-    # Item 1.3: Adicionar modo na mensagem
-    modo = os.getenv('PAPER_MODE', 'true').lower()
-    if modo == 'true':
-        mensagem = f"[📝 PAPER MODE]\n\n{mensagem}"
-    
-    # Enviar alerta
-    if pode_enviar_alerta(par, setup_nome):
-        if enviar_telegram(mensagem):
-            # Item 1.4: Registrar no ledger
-            ledger = LedgerSinais()
-            sinal_id = ledger.registrar_sinal(
-                par=par,
-                setup=setup_nome,
-                score=score,
-                preco_entrada=preco,
-                stop=stop,
-                alvo=alvo,
-                observacoes=f"TF: 1h | Confluência detectada"
-            )
-            
-            print(f"✅ ALERTA AVANÇADO: {par} - {setup_nome} (score: {score})")
-            registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop, score_100=score_100)
-            logger.info(f"📨 Alerta enviado | ID Ledger: {sinal_id}")
-            return True
-
+        # === SEMANA 1: VALIDAÇÕES E REGISTRO ===
+        logger = logging.getLogger('scanner')
+        
+        # Extrair dados para validação
+        setup_nome = setup_info.get('setup', 'Desconhecido')
+        
+        # Item 1.2: Validar antes de enviar
+        if not validar_antes_enviar(par, setup_nome, score, preco, stop, alvo):
+            logger.warning(f"❌ Sinal reprovado nas validações: {par}")
+            return False
+        
+        # Item 1.5: Verificar throttle
+        if not verificar_throttle(par, tempo_reenvio_min=TEMPO_REENVIO):
+            return False
+        
+        # Item 1.3: Adicionar modo na mensagem
+        modo = os.getenv('PAPER_MODE', 'true').lower()
+        if modo == 'true':
+            mensagem = f"[📝 PAPER MODE]\n\n{mensagem}"
+        
+        # Enviar alerta
+        if pode_enviar_alerta(par, setup_nome):
+            if enviar_telegram(mensagem):
+                # Item 1.4: Registrar no ledger
+                ledger = LedgerSinais()
+                sinal_id = ledger.registrar_sinal(
+                    par=par,
+                    setup=setup_nome,
+                    score=score,
+                    preco_entrada=preco,
+                    stop=stop,
+                    alvo=alvo,
+                    observacoes=f"TF: 1h | Confluência detectada"
+                )
+                
+                print(f"✅ ALERTA AVANÇADO: {par} - {setup_nome} (score: {score})")
+                registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop, score_100=score_100)
+                logger.info(f"📨 Alerta enviado | ID Ledger: {sinal_id}")
+                return True
+        
         return False
 
     except Exception as e:
