@@ -4,6 +4,8 @@ import requests
 import numpy as np
 import pandas as pd
 import ccxt
+from pathlib import Path
+import csv
 
 # === TA (indicadores técnicos)
 # Precisamos do módulo inteiro para usar ta.momentum/ta.volatility nas funções gpt_
@@ -51,17 +53,243 @@ if not TOKEN or not CHAT_ID:
 # Arquivos de dados
 ARQUIVO_SINAIS_MONITORADOS = 'sinais_monitorados.json'
 ARQUIVO_ESTATISTICAS = 'estatisticas_scanner.json'
+ARQUIVO_LEDGER = 'data/ledger_sinais.csv'
+ARQUIVO_THROTTLE = 'data/throttle.json'
 
 # Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
+#logging.basicConfig(
+#    level=logging.INFO,
+#    format='%(asctime)s #[%(levelname)s] %(message)s',
+#   datefmt='%Y-%m-%d %H:%M:%S'
+#)
 
 # Controle de alertas
 alertas_enviados = {}
+# ===============================
+# === ITEM 1.1: LOGS ESTRUTURADOS PT-BR
+# ===============================
 
+def configurar_logs_estruturados():
+    """Configura sistema de logs estruturados em português"""
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+    
+    data_hoje = datetime.datetime.now().strftime("%Y-%m-%d")
+    log_file = log_dir / f"scanner_{data_hoje}.log"
+    
+    formato = '%(asctime)s [%(levelname)s] %(name)s - %(message)s'
+    formato_data = '%Y-%m-%d %H:%M:%S'
+    
+    logging.basicConfig(
+        level=logging.INFO,
+        format=formato,
+        datefmt=formato_data,
+        handlers=[
+            logging.FileHandler(log_file, encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+    
+    logger = logging.getLogger('scanner')
+    logger.info("=" * 60)
+    logger.info("🚀 SCANNER INICIADO")
+    logger.info(f"📅 Data/Hora: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    logger.info(f"📂 Log: {log_file}")
+    logger.info("=" * 60)
+    
+    return logger
+    # ===============================
+# === ITEM 1.2: VALIDAÇÃO ANTES DE ENVIAR
+# ===============================
+
+def validar_antes_enviar(par, setup, score, preco_entrada, stop, alvo):
+    """Valida sinal antes de enviar ao Telegram"""
+    logger = logging.getLogger('scanner')
+    
+    if not par or par.strip() == "":
+        logger.warning("❌ Validação falhou: Par vazio")
+        return False
+    
+    if not setup or setup.strip() == "":
+        logger.warning(f"❌ Validação falhou [{par}]: Setup não identificado")
+        return False
+    
+    if score < 6.0:
+        logger.info(f"⚠️ Score baixo [{par}]: {score:.1f} < 6.0 (não enviado)")
+        return False
+    
+    if preco_entrada <= 0 or stop <= 0 or alvo <= 0:
+        logger.error(f"❌ Validação falhou [{par}]: Preços inválidos")
+        return False
+    
+    if not (stop < preco_entrada < alvo):
+        logger.error(f"❌ Validação falhou [{par}]: Ordem incorreta")
+        return False
+    
+    risco = preco_entrada - stop
+    recompensa = alvo - preco_entrada
+    rr_ratio = recompensa / risco if risco > 0 else 0
+    
+    if rr_ratio < 1.5:
+        logger.warning(f"⚠️ R:R baixo [{par}]: {rr_ratio:.2f} < 1.5")
+        return False
+    
+    logger.info(f"✅ Validações OK [{par}]: Score={score:.1f}, R:R={rr_ratio:.2f}")
+    return True
+    
+#===============================
+# === ITEM 1.3: PAPER MODE OBRIGATÓRIO
+# ===============================
+
+def obter_modo_operacao():
+    """Obtém modo de operação (PAPER ou LIVE)"""
+    logger = logging.getLogger('scanner')
+    modo = os.getenv('PAPER_MODE', 'true').lower()
+    
+    if modo == 'false':
+        logger.critical("=" * 60)
+        logger.critical("⚠️  ATENÇÃO: LIVE MODE DETECTADO")
+        logger.critical("⚠️  Este modo executa ordens REAIS")
+        logger.critical("⚠️  Certifique-se de ter cumprido os critérios GO")
+        logger.critical("=" * 60)
+        
+        import time
+        for i in range(10, 0, -1):
+            print(f"⏳ Iniciando LIVE MODE em {i}s... (Ctrl+C para cancelar)")
+            time.sleep(1)
+        
+        logger.warning("🔴 LIVE MODE ATIVADO")
+        return "LIVE"
+    else:
+        logger.info("📝 PAPER MODE ATIVO - Apenas registro e análise")
+        return "PAPER"   
+  #===============================
+# === ITEM 1.4: LEDGER COMPLETO CSV
+# ===============================
+
+class LedgerSinais:
+    """Gerencia ledger completo de sinais em CSV"""
+    
+    def __init__(self, arquivo="data/ledger_sinais.csv"):
+        self.arquivo = Path(arquivo)
+        self.logger = logging.getLogger('scanner')
+        self.arquivo.parent.mkdir(exist_ok=True)
+        
+        if not self.arquivo.exists():
+            self._criar_arquivo()
+    
+    def _criar_arquivo(self):
+        """Cria arquivo CSV com cabeçalho"""
+        cabecalho = [
+            'id', 'data_criacao', 'par', 'setup', 'score',
+            'preco_entrada', 'stop', 'alvo', 'rr_ratio',
+            'status', 'data_encerramento', 'preco_final',
+            'resultado', 'roi_pct', 'duracao_horas', 'observacoes'
+        ]
+        
+        with open(self.arquivo, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(cabecalho)
+        
+        self.logger.info(f"📄 Ledger criado: {self.arquivo}")
+    
+    def registrar_sinal(self, par, setup, score, preco_entrada, stop, alvo, observacoes=""):
+        """Registra novo sinal no ledger"""
+        sinal_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        
+        risco = preco_entrada - stop
+        recompensa = alvo - preco_entrada
+        rr_ratio = recompensa / risco if risco > 0 else 0
+        
+        linha = [
+            sinal_id,
+            datetime.datetime.now().isoformat(),
+            par, setup, f"{score:.2f}",
+            f"{preco_entrada:.8f}", f"{stop:.8f}", f"{alvo:.8f}",
+            f"{rr_ratio:.2f}",
+            "aberto", "", "", "", "", "", observacoes
+        ]
+        
+        with open(self.arquivo, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(linha)
+        
+        self.logger.info(f"📝 Sinal no ledger: {sinal_id} - {par}")
+        return sinal_id
+    
+    def atualizar_sinal(self, sinal_id, preco_final, resultado, observacoes=""):
+        """Atualiza sinal quando encerrado"""
+        linhas = []
+        
+        with open(self.arquivo, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['id'] == sinal_id:
+                    preco_entrada = float(row['preco_entrada'])
+                    roi_pct = ((preco_final - preco_entrada) / preco_entrada) * 100
+                    
+                    data_criacao = datetime.datetime.fromisoformat(row['data_criacao'])
+                    data_encerramento = datetime.datetime.now()
+                    duracao = (data_encerramento - data_criacao).total_seconds() / 3600
+                    
+                    row['status'] = 'fechado'
+                    row['data_encerramento'] = data_encerramento.isoformat()
+                    row['preco_final'] = f"{preco_final:.8f}"
+                    row['resultado'] = resultado
+                    row['roi_pct'] = f"{roi_pct:+.2f}"
+                    row['duracao_horas'] = f"{duracao:.1f}"
+                    row['observacoes'] = observacoes
+                    
+                    self.logger.info(f"✅ Sinal atualizado: {sinal_id} - {resultado} - ROI: {roi_pct:+.2f}%")
+                
+                linhas.append(row)
+        
+        with open(self.arquivo, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=linhas[0].keys())
+            writer.writeheader()
+            writer.writerows(linhas)      
+            
+#===============================
+# === ITEM 1.5: LOG DE THROTTLE
+# ===============================
+
+def verificar_throttle(par, tempo_reenvio_min=30):
+    """Verifica se pode enviar alerta (controle de throttle)"""
+    logger = logging.getLogger('scanner')
+    throttle_file = Path("data/throttle.json")
+    throttle_file.parent.mkdir(exist_ok=True)
+    
+    if throttle_file.exists():
+        with open(throttle_file, 'r') as f:
+            throttle_data = json.load(f)
+    else:
+        throttle_data = {}
+    
+    agora = datetime.datetime.now()
+    
+    if par in throttle_data:
+        ultimo_envio = datetime.datetime.fromisoformat(throttle_data[par])
+        tempo_passado = (agora - ultimo_envio).total_seconds() / 60
+        
+        if tempo_passado < tempo_reenvio_min:
+            proximo_permitido = ultimo_envio + datetime.timedelta(minutes=tempo_reenvio_min)
+            falta = (proximo_permitido - agora).total_seconds() / 60
+            
+            logger.info(f"⏸️  Throttle ativo [{par}]:")
+            logger.info(f"   ├─ Último alerta há {tempo_passado:.1f} minutos")
+            logger.info(f"   ├─ Tempo mínimo: {tempo_reenvio_min} minutos")
+            logger.info(f"   └─ Próximo permitido em: {falta:.1f} minutos")
+            
+            return False
+    
+    throttle_data[par] = agora.isoformat()
+    
+    with open(throttle_file, 'w') as f:
+        json.dump(throttle_data, f, indent=2)
+    
+    logger.info(f"✅ Throttle OK [{par}]: Pode enviar")
+    return True
+           
 # ===============================
 # === VALIDAÇÃO E LIMPEZA DE DADOS
 # ===============================
@@ -1195,12 +1423,45 @@ def enviar_alerta_avancado(par, analise_tf, setup_info):
             )
         mensagem += explicacao
 
-        # Enviar alerta + registro
-        if pode_enviar_alerta(par, setup_info['setup']):
-            if enviar_telegram(mensagem):
-                print(f"✅ ALERTA AVANÇADO: {par} - {setup_info['setup']} (score: {score})")
-                registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop, score_100=score_100)
-                return True
+# === SEMANA 1: VALIDAÇÕES E REGISTRO ===
+    logger = logging.getLogger('scanner')
+    
+    # Extrair dados para validação
+    setup_nome = setup_info.get('setup', 'Desconhecido')
+    
+    # Item 1.2: Validar antes de enviar
+    if not validar_antes_enviar(par, setup_nome, score, preco, stop, alvo):
+        logger.warning(f"❌ Sinal reprovado nas validações: {par}")
+        return False
+    
+    # Item 1.5: Verificar throttle
+    if not verificar_throttle(par, tempo_reenvio_min=TEMPO_REENVIO):
+        return False
+    
+    # Item 1.3: Adicionar modo na mensagem
+    modo = os.getenv('PAPER_MODE', 'true').lower()
+    if modo == 'true':
+        mensagem = f"[📝 PAPER MODE]\n\n{mensagem}"
+    
+    # Enviar alerta
+    if pode_enviar_alerta(par, setup_nome):
+        if enviar_telegram(mensagem):
+            # Item 1.4: Registrar no ledger
+            ledger = LedgerSinais()
+            sinal_id = ledger.registrar_sinal(
+                par=par,
+                setup=setup_nome,
+                score=score,
+                preco_entrada=preco,
+                stop=stop,
+                alvo=alvo,
+                observacoes=f"TF: 1h | Confluência detectada"
+            )
+            
+            print(f"✅ ALERTA AVANÇADO: {par} - {setup_nome} (score: {score})")
+            registrar_sinal_monitorado(par, setup_info.get('id', ''), preco, alvo, stop, score_100=score_100)
+            logger.info(f"📨 Alerta enviado | ID Ledger: {sinal_id}")
+            return True
 
         return False
 
@@ -1434,6 +1695,12 @@ def executar_scanner_avancado():
       (D) Filtro de liquidez (volume médio diário 30d) antes do loop (opcional)
     """
     try:
+  # === SEMANA 1: INICIALIZAÇÃO ===
+        logger = configurar_logs_estruturados()
+        modo = obter_modo_operacao()
+        ledger = LedgerSinais()
+        
+        print("🚀 SCANNER AVANÇADO ETH/BTC - ETAPA 2")  
         print("🚀 SCANNER AVANÇADO ETH/BTC - ETAPA 2")
         print(f"⏰ Executado em: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print(f"📊 Pares: {', '.join(PARES_ALVOS)}")
