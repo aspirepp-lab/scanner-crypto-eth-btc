@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write  # 🔧 ALTERADO: read → write para permitir commits
+  contents: write  # Permite commits automáticos
 
 jobs:
   crypto-scanner:
@@ -23,12 +23,12 @@ jobs:
       # Ajusta timezone para logs coerentes com Brasília
       TZ: America/Sao_Paulo
 
-      # (Opcional) Secrets usados pelo script
+      # Secrets usados pelo script
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
 
-      # ====== FLAGS (ligar/desligar recursos do main.py) ======
+      # FLAGS (ligar/desligar recursos do main.py)
       ATIVAR_MACRO_UNICO: "true"
       ATIVAR_SCORE_COMPONENTES: "true"
       ATIVAR_VWAP: "true"
@@ -48,20 +48,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0  # Necessário para commits
+          fetch-depth: 0
 
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 📦 Install dependencies (requirements.txt)
+      - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
           if [ -f requirements.txt ]; then
             pip install --no-cache-dir -r requirements.txt
           else
-            echo "❌ requirements.txt não encontrado na raiz do repositório."
+            echo "Erro: requirements.txt nao encontrado"
             exit 1
           fi
 
@@ -76,7 +76,7 @@ jobs:
                   ver = getattr(mod, "__version__", "n/a")
                   print(f"{m}: {ver}")
               except Exception as e:
-                  print(f"{m}: ❌ ({e})")
+                  print(f"{m}: ERRO ({e})")
           PY
 
       - name: ✅ Verify Installation
@@ -88,9 +88,9 @@ jobs:
           for module in required_modules:
               try:
                   __import__(module)
-                  print(f'✅ {module}: OK')
+                  print(f'OK {module}')
               except Exception as e:
-                  print(f'❌ {module}: FAILED - {e}')
+                  print(f'FALHOU {module}: {e}')
                   ok = False
           sys.exit(0 if ok else 1)
           PY
@@ -100,65 +100,55 @@ jobs:
           python --version
           pip --version
           echo ""
-          echo "📂 Workspace:"
+          echo "Workspace:"
           ls -lah
           echo ""
-          echo "💾 Espaço em disco:"
+          echo "Disco:"
           df -h
           echo ""
-          echo "🧠 Memória:"
+          echo "Memoria:"
           free -h
 
       - name: ▶️ Run Scanner
         run: |
           set -e
-          # Detecta arquivo de entrada (preferência: main.py; fallback: scanner.py)
           if [ -f main.py ]; then EP=main.py;
           elif [ -f scanner.py ]; then EP=scanner.py;
-          else echo "❌ Nenhum entrypoint encontrado (main.py/scanner.py)."; exit 1; fi
+          else echo "Erro: Nenhum entrypoint encontrado"; exit 1; fi
           echo "Entrypoint: $EP"
-          echo "🔧 Flags -> MACRO=$ATIVAR_MACRO_UNICO SCORE=$ATIVAR_SCORE_COMPONENTES VWAP=$ATIVAR_VWAP BBWIDTH=$ATIVAR_BBWIDTH LIQ=$ATIVAR_FILTRO_LIQUIDEZ MIN_LIQ=$LIQ_MINIMO_30D"
-          echo "🔧 Pesos  -> TEND=$PESO_TENDENCIA MOM=$PESO_MOMENTO VOL=$PESO_VOLUME VOLAT=$PESO_VOLATILIDADE CONF=$PESO_CONFLUENCIA"
           python "$EP"
 
-      # 🆕 NOVO STEP: Commit automático de dados persistentes
       - name: 💾 Commit dados persistentes
         if: success()
         run: |
-          # Configurar git
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "GitHub Actions Bot"
           
-          # Criar diretórios se não existirem
           mkdir -p data logs
           
-          # Adicionar arquivos de dados (forçar inclusão mesmo se no .gitignore)
-          git add -f data/ledger_sinais.csv 2>/dev/null || echo "⚠️ Ledger não encontrado"
-          git add -f data/throttle.json 2>/dev/null || echo "⚠️ Throttle não encontrado"
-          git add -f logs/scanner_*.log 2>/dev/null || echo "⚠️ Logs não encontrados"
+          git add -f data/ledger_sinais.csv 2>/dev/null || echo "Ledger nao encontrado"
+          git add -f data/throttle.json 2>/dev/null || echo "Throttle nao encontrado"
+          git add -f logs/scanner_*.log 2>/dev/null || echo "Logs nao encontrados"
           
-          # Verificar se há mudanças para commitar
           if git diff --staged --quiet; then
-            echo "✅ Nenhuma mudança nos dados para commit"
+            echo "Nenhuma mudanca para commit"
           else
-            # Fazer commit
             TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
             SINAIS_COUNT=$(wc -l < data/ledger_sinais.csv 2>/dev/null | tr -d ' ' || echo "0")
             
-            git commit -m "📊 Auto-update dados [${TIMESTAMP}]
+            git commit -m "Auto-update dados ${TIMESTAMP}
 
-- Ledger: ${SINAIS_COUNT} sinais registrados
-- Throttle atualizado
-- Logs persistidos
+Ledger: ${SINAIS_COUNT} sinais
+Throttle atualizado
+Logs persistidos
 
 [skip ci]"
             
-            # Push para o repositório
             git push
-            echo "✅ Dados persistidos com sucesso!"
+            echo "Dados persistidos com sucesso"
           fi
 
-      - name: 📤 Upload Artifacts (logs, relatórios)
+      - name: 📤 Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
