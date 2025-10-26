@@ -2,17 +2,15 @@ name: Scanner Crypto ETH/BTC Focus
 
 on:
   schedule:
-    # Executa a cada 15 minutos durante horário de trading
     - cron: '*/15 6-23 * * *'
-  workflow_dispatch: {}  # Permite execução manual
+  workflow_dispatch: {}
 
-# Evita execuções simultâneas se um job atrasar
 concurrency:
   group: scanner-crypto
   cancel-in-progress: false
 
 permissions:
-  contents: write  # Permite commits automáticos
+  contents: write
 
 jobs:
   crypto-scanner:
@@ -20,23 +18,16 @@ jobs:
     timeout-minutes: 12
 
     env:
-      # Ajusta timezone para logs coerentes com Brasília
       TZ: America/Sao_Paulo
-
-      # Secrets usados pelo script
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
-
-      # FLAGS (ligar/desligar recursos do main.py)
       ATIVAR_MACRO_UNICO: "true"
       ATIVAR_SCORE_COMPONENTES: "true"
       ATIVAR_VWAP: "true"
       ATIVAR_BBWIDTH: "true"
       ATIVAR_FILTRO_LIQUIDEZ: "false"
       LIQ_MINIMO_30D: "0"
-
-      # Pesos do score 0–100
       PESO_TENDENCIA: "1.0"
       PESO_MOMENTO: "1.0"
       PESO_VOLUME: "1.0"
@@ -44,18 +35,18 @@ jobs:
       PESO_CONFLUENCIA: "1.0"
 
     steps:
-      - name: 🏁 Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: 🐍 Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
           if [ -f requirements.txt ]; then
@@ -65,7 +56,7 @@ jobs:
             exit 1
           fi
 
-      - name: 🔎 Show versions
+      - name: Show versions
         run: |
           python - << 'PY'
           import sys, importlib
@@ -79,7 +70,7 @@ jobs:
                   print(f"{m}: ERRO ({e})")
           PY
 
-      - name: ✅ Verify Installation
+      - name: Verify Installation
         run: |
           python - << 'PY'
           import sys
@@ -95,21 +86,15 @@ jobs:
           sys.exit(0 if ok else 1)
           PY
 
-      - name: 🧰 System & Resources
+      - name: System Info
         run: |
           python --version
           pip --version
-          echo ""
-          echo "Workspace:"
           ls -lah
-          echo ""
-          echo "Disco:"
           df -h
-          echo ""
-          echo "Memoria:"
           free -h
 
-      - name: ▶️ Run Scanner
+      - name: Run Scanner
         run: |
           set -e
           if [ -f main.py ]; then EP=main.py;
@@ -118,7 +103,7 @@ jobs:
           echo "Entrypoint: $EP"
           python "$EP"
 
-      - name: 💾 Commit dados persistentes
+      - name: Commit dados persistentes
         if: success()
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -126,29 +111,22 @@ jobs:
           
           mkdir -p data logs
           
-          git add -f data/ledger_sinais.csv 2>/dev/null || echo "Ledger nao encontrado"
-          git add -f data/throttle.json 2>/dev/null || echo "Throttle nao encontrado"
-          git add -f logs/scanner_*.log 2>/dev/null || echo "Logs nao encontrados"
+          git add -f data/ledger_sinais.csv 2>/dev/null || true
+          git add -f data/throttle.json 2>/dev/null || true
+          git add -f logs/scanner_*.log 2>/dev/null || true
           
           if git diff --staged --quiet; then
-            echo "Nenhuma mudanca para commit"
+            echo "Sem mudancas para commit"
           else
-            TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-            SINAIS_COUNT=$(wc -l < data/ledger_sinais.csv 2>/dev/null | tr -d ' ' || echo "0")
+            TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+            SINAIS=$(wc -l < data/ledger_sinais.csv 2>/dev/null | tr -d ' ' || echo "0")
             
-            git commit -m "Auto-update dados ${TIMESTAMP}
-
-Ledger: ${SINAIS_COUNT} sinais
-Throttle atualizado
-Logs persistidos
-
-[skip ci]"
-            
+            git commit -m "Auto-update ${TIMESTAMP}" -m "Sinais: ${SINAIS}" -m "[skip ci]"
             git push
-            echo "Dados persistidos com sucesso"
+            echo "Dados persistidos"
           fi
 
-      - name: 📤 Upload Artifacts
+      - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -161,7 +139,7 @@ Logs persistidos
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: 🧹 Cleanup on Failure
+      - name: Cleanup on Failure
         if: failure()
         run: |
           pip cache purge || true
