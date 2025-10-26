@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write  # 🔧 ALTERADO: read → write para permitir commits
 
 jobs:
   crypto-scanner:
@@ -46,6 +46,9 @@ jobs:
     steps:
       - name: 🏁 Checkout Repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0  # Necessário para commits
 
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
@@ -118,11 +121,48 @@ jobs:
           echo "🔧 Pesos  -> TEND=$PESO_TENDENCIA MOM=$PESO_MOMENTO VOL=$PESO_VOLUME VOLAT=$PESO_VOLATILIDADE CONF=$PESO_CONFLUENCIA"
           python "$EP"
 
+      # 🆕 NOVO STEP: Commit automático de dados persistentes
+      - name: 💾 Commit dados persistentes
+        if: success()
+        run: |
+          # Configurar git
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions Bot"
+          
+          # Criar diretórios se não existirem
+          mkdir -p data logs
+          
+          # Adicionar arquivos de dados (forçar inclusão mesmo se no .gitignore)
+          git add -f data/ledger_sinais.csv 2>/dev/null || echo "⚠️ Ledger não encontrado"
+          git add -f data/throttle.json 2>/dev/null || echo "⚠️ Throttle não encontrado"
+          git add -f logs/scanner_*.log 2>/dev/null || echo "⚠️ Logs não encontrados"
+          
+          # Verificar se há mudanças para commitar
+          if git diff --staged --quiet; then
+            echo "✅ Nenhuma mudança nos dados para commit"
+          else
+            # Fazer commit
+            TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+            SINAIS_COUNT=$(wc -l < data/ledger_sinais.csv 2>/dev/null | tr -d ' ' || echo "0")
+            
+            git commit -m "📊 Auto-update dados [${TIMESTAMP}]
+
+- Ledger: ${SINAIS_COUNT} sinais registrados
+- Throttle atualizado
+- Logs persistidos
+
+[skip ci]"
+            
+            # Push para o repositório
+            git push
+            echo "✅ Dados persistidos com sucesso!"
+          fi
+
       - name: 📤 Upload Artifacts (logs, relatórios)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: scanner-artifacts
+          name: scanner-artifacts-${{ github.run_number }}
           path: |
             logs/**
             data/**
