@@ -1102,3 +1102,9 @@
 2025-10-27 20:27:32 [INFO] scanner -    ├─ Último alerta há 908.8 minutos
 2025-10-27 20:27:32 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2025-10-27 20:27:32 [INFO] scanner -    └─ Próximo permitido em: 891.2 minutos
+2025-10-27 20:36:40 [INFO] scanner - ============================================================
+2025-10-27 20:36:40 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-10-27 20:36:40 [INFO] scanner - 📅 Data/Hora: 27/10/2025 20:36:40
+2025-10-27 20:36:40 [INFO] scanner - 📂 Log: logs/scanner_2025-10-27.log
+2025-10-27 20:36:40 [INFO] scanner - ============================================================
+2025-10-27 20:36:40 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
