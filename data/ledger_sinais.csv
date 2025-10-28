@@ -1,3 +1,4 @@
 id,data_criacao,par,setup,score,preco_entrada,stop,alvo,rr_ratio,status,data_encerramento,preco_final,resultado,roi_pct,duracao_horas,observacoes
 20251025_230847_531484,2025-10-25T23:08:47.531726,BTC/USDT,🔹 SETUP LEVE,7.00,111560.90000000,111178.60000000,112357.35000000,2.08,aberto,,,,,,TF: 1h | Confluência detectada
 20251025_230850_318034,2025-10-25T23:08:50.318276,ETH/USDT,🔹 SETUP LEVE,7.00,3928.28000000,3897.94000000,3988.97000000,2.00,aberto,,,,,,TF: 1h | Confluência detectada
+20251028_113625_208283,2025-10-28T11:36:25.208509,ETH/USDT,🔥 SETUP ALTA CONFLUÊNCIA,7.30,4138.68000000,4088.35000000,4239.33000000,2.00,aberto,,,,,,TF: 1h | Confluência detectada
