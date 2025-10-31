@@ -9,3 +9,15 @@
 2025-10-31 03:19:51 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
 2025-10-31 03:19:51 [INFO] scanner - 📝 Sinal no ledger: 20251031_031951_754734 - BTC/USDT
 2025-10-31 03:19:51 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20251031_031951_754734
+2025-10-31 03:48:56 [INFO] scanner - ============================================================
+2025-10-31 03:48:56 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-10-31 03:48:56 [INFO] scanner - 📅 Data/Hora: 31/10/2025 03:48:56
+2025-10-31 03:48:56 [INFO] scanner - 📂 Log: logs/scanner_2025-10-31.log
+2025-10-31 03:48:56 [INFO] scanner - ============================================================
+2025-10-31 03:48:56 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2025-10-31 03:48:59 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-10-31 03:48:59 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2025-10-31 03:48:59 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2025-10-31 03:48:59 [INFO] scanner -    ├─ Último alerta há 29.1 minutos
+2025-10-31 03:48:59 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2025-10-31 03:48:59 [INFO] scanner -    └─ Próximo permitido em: 1770.9 minutos
