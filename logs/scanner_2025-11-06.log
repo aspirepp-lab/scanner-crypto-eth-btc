@@ -448,3 +448,9 @@
 2025-11-06 15:49:51 [INFO] scanner -    ├─ Último alerta há 1735.0 minutos
 2025-11-06 15:49:51 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2025-11-06 15:49:51 [INFO] scanner -    └─ Próximo permitido em: 65.0 minutos
+2025-11-06 16:10:57 [INFO] scanner - ============================================================
+2025-11-06 16:10:57 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-11-06 16:10:57 [INFO] scanner - 📅 Data/Hora: 06/11/2025 16:10:57
+2025-11-06 16:10:57 [INFO] scanner - 📂 Log: logs/scanner_2025-11-06.log
+2025-11-06 16:10:57 [INFO] scanner - ============================================================
+2025-11-06 16:10:57 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
