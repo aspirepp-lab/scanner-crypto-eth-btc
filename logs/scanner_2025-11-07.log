@@ -33,3 +33,9 @@
 2025-11-07 04:48:15 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
 2025-11-07 04:48:16 [INFO] scanner - 📝 Sinal no ledger: 20251107_044816_457917 - BTC/USDT
 2025-11-07 04:48:16 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20251107_044816_457917
+2025-11-07 05:18:23 [INFO] scanner - ============================================================
+2025-11-07 05:18:23 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-11-07 05:18:23 [INFO] scanner - 📅 Data/Hora: 07/11/2025 05:18:23
+2025-11-07 05:18:23 [INFO] scanner - 📂 Log: logs/scanner_2025-11-07.log
+2025-11-07 05:18:23 [INFO] scanner - ============================================================
+2025-11-07 05:18:23 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
