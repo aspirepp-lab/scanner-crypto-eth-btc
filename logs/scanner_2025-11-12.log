@@ -638,3 +638,15 @@
 2025-11-12 16:48:21 [INFO] scanner -    ├─ Último alerta há 516.2 minutos
 2025-11-12 16:48:21 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2025-11-12 16:48:21 [INFO] scanner -    └─ Próximo permitido em: 1283.8 minutos
+2025-11-12 17:14:50 [INFO] scanner - ============================================================
+2025-11-12 17:14:50 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-11-12 17:14:50 [INFO] scanner - 📅 Data/Hora: 12/11/2025 17:14:50
+2025-11-12 17:14:50 [INFO] scanner - 📂 Log: logs/scanner_2025-11-12.log
+2025-11-12 17:14:50 [INFO] scanner - ============================================================
+2025-11-12 17:14:50 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2025-11-12 17:14:54 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-11-12 17:14:54 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=8.3, R:R=2.08
+2025-11-12 17:14:54 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2025-11-12 17:14:54 [INFO] scanner -    ├─ Último alerta há 468.3 minutos
+2025-11-12 17:14:54 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2025-11-12 17:14:54 [INFO] scanner -    └─ Próximo permitido em: 1331.7 minutos
