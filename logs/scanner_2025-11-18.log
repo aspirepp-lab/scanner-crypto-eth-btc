@@ -180,3 +180,10 @@
 2025-11-18 10:07:08 [INFO] scanner - ============================================================
 2025-11-18 10:07:08 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
 2025-11-18 10:07:09 [WARNING] root - Falha CoinGecko (macro): Expecting value: line 1 column 1 (char 0)
+2025-11-18 10:42:56 [INFO] scanner - ============================================================
+2025-11-18 10:42:56 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-11-18 10:42:56 [INFO] scanner - 📅 Data/Hora: 18/11/2025 10:42:56
+2025-11-18 10:42:56 [INFO] scanner - 📂 Log: logs/scanner_2025-11-18.log
+2025-11-18 10:42:56 [INFO] scanner - ============================================================
+2025-11-18 10:42:56 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2025-11-18 10:42:58 [WARNING] root - Falha CoinGecko (macro): Expecting value: line 1 column 1 (char 0)
