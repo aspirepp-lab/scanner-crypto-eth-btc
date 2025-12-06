@@ -164,3 +164,9 @@
 2025-12-06 11:48:04 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
 2025-12-06 11:48:05 [INFO] scanner - 📝 Sinal no ledger: 20251206_114805_649024 - ETH/USDT
 2025-12-06 11:48:05 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20251206_114805_649024
+2025-12-06 12:11:59 [INFO] scanner - ============================================================
+2025-12-06 12:11:59 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-12-06 12:11:59 [INFO] scanner - 📅 Data/Hora: 06/12/2025 12:11:59
+2025-12-06 12:11:59 [INFO] scanner - 📂 Log: logs/scanner_2025-12-06.log
+2025-12-06 12:11:59 [INFO] scanner - ============================================================
+2025-12-06 12:11:59 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
