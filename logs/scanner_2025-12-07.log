@@ -583,3 +583,20 @@
 2025-12-07 17:33:04 [INFO] scanner -    ├─ Último alerta há 1785.0 minutos
 2025-12-07 17:33:04 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2025-12-07 17:33:04 [INFO] scanner -    └─ Próximo permitido em: 15.0 minutos
+2025-12-07 17:48:14 [INFO] scanner - ============================================================
+2025-12-07 17:48:14 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-12-07 17:48:14 [INFO] scanner - 📅 Data/Hora: 07/12/2025 17:48:14
+2025-12-07 17:48:14 [INFO] scanner - 📂 Log: logs/scanner_2025-12-07.log
+2025-12-07 17:48:14 [INFO] scanner - ============================================================
+2025-12-07 17:48:14 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2025-12-07 17:48:18 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-07 17:48:18 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2025-12-07 17:48:18 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2025-12-07 17:48:18 [INFO] scanner -    ├─ Último alerta há 300.4 minutos
+2025-12-07 17:48:18 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2025-12-07 17:48:18 [INFO] scanner -    └─ Próximo permitido em: 1499.6 minutos
+2025-12-07 17:48:20 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-07 17:48:20 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2025-12-07 17:48:20 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2025-12-07 17:48:21 [INFO] scanner - 📝 Sinal no ledger: 20251207_174821_307830 - ETH/USDT
+2025-12-07 17:48:21 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20251207_174821_307830
