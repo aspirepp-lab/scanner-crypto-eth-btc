@@ -394,3 +394,21 @@
 2025-12-10 10:12:11 [INFO] scanner -    ├─ Último alerta há 1523.6 minutos
 2025-12-10 10:12:11 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2025-12-10 10:12:11 [INFO] scanner -    └─ Próximo permitido em: 276.4 minutos
+2025-12-10 10:49:13 [INFO] scanner - ============================================================
+2025-12-10 10:49:13 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-12-10 10:49:13 [INFO] scanner - 📅 Data/Hora: 10/12/2025 10:49:13
+2025-12-10 10:49:13 [INFO] scanner - 📂 Log: logs/scanner_2025-12-10.log
+2025-12-10 10:49:13 [INFO] scanner - ============================================================
+2025-12-10 10:49:13 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2025-12-10 10:49:14 [WARNING] root - Falha CoinGecko (macro): 'data'
+2025-12-10 10:49:16 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-10 10:49:16 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2025-12-10 10:49:16 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2025-12-10 10:49:16 [INFO] scanner - 📝 Sinal no ledger: 20251210_104916_859183 - BTC/USDT
+2025-12-10 10:49:16 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20251210_104916_859183
+2025-12-10 10:49:18 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-10 10:49:18 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2025-12-10 10:49:18 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2025-12-10 10:49:18 [INFO] scanner -    ├─ Último alerta há 1560.7 minutos
+2025-12-10 10:49:18 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2025-12-10 10:49:18 [INFO] scanner -    └─ Próximo permitido em: 239.3 minutos
