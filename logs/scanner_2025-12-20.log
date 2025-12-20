@@ -1,0 +1,17 @@
+2025-12-20 03:20:38 [INFO] scanner - ============================================================
+2025-12-20 03:20:38 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-12-20 03:20:38 [INFO] scanner - 📅 Data/Hora: 20/12/2025 03:20:38
+2025-12-20 03:20:38 [INFO] scanner - 📂 Log: logs/scanner_2025-12-20.log
+2025-12-20 03:20:38 [INFO] scanner - ============================================================
+2025-12-20 03:20:38 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2025-12-20 03:20:42 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-20 03:20:42 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2025-12-20 03:20:42 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2025-12-20 03:20:42 [INFO] scanner -    ├─ Último alerta há 1439.3 minutos
+2025-12-20 03:20:42 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2025-12-20 03:20:42 [INFO] scanner -    └─ Próximo permitido em: 360.7 minutos
+2025-12-20 03:20:44 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-20 03:20:44 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2025-12-20 03:20:44 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2025-12-20 03:20:44 [INFO] scanner - 📝 Sinal no ledger: 20251220_032044_920719 - ETH/USDT
+2025-12-20 03:20:44 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20251220_032044_920719
