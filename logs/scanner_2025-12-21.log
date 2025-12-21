@@ -303,3 +303,27 @@
 2025-12-21 09:24:24 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
 2025-12-21 09:24:25 [INFO] scanner - 📝 Sinal no ledger: 20251221_092425_105797 - ETH/USDT
 2025-12-21 09:24:25 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20251221_092425_105797
+2025-12-21 10:03:12 [INFO] scanner - ============================================================
+2025-12-21 10:03:12 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-12-21 10:03:12 [INFO] scanner - 📅 Data/Hora: 21/12/2025 10:03:12
+2025-12-21 10:03:12 [INFO] scanner - 📂 Log: logs/scanner_2025-12-21.log
+2025-12-21 10:03:12 [INFO] scanner - ============================================================
+2025-12-21 10:03:12 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2025-12-21 10:03:15 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-21 10:03:15 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.0, R:R=2.08
+2025-12-21 10:03:15 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2025-12-21 10:03:15 [INFO] scanner -    ├─ Último alerta há 1479.2 minutos
+2025-12-21 10:03:15 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2025-12-21 10:03:15 [INFO] scanner -    └─ Próximo permitido em: 320.8 minutos
+2025-12-21 10:03:15 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-21 10:03:15 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.0, R:R=2.08
+2025-12-21 10:03:15 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2025-12-21 10:03:15 [INFO] scanner -    ├─ Último alerta há 1479.2 minutos
+2025-12-21 10:03:15 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2025-12-21 10:03:15 [INFO] scanner -    └─ Próximo permitido em: 320.8 minutos
+2025-12-21 10:03:17 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-21 10:03:17 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.0, R:R=2.00
+2025-12-21 10:03:17 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2025-12-21 10:03:17 [INFO] scanner -    ├─ Último alerta há 38.9 minutos
+2025-12-21 10:03:17 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2025-12-21 10:03:17 [INFO] scanner -    └─ Próximo permitido em: 1761.1 minutos
