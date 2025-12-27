@@ -1,0 +1,11 @@
+2025-12-27 03:20:30 [INFO] scanner - ============================================================
+2025-12-27 03:20:30 [INFO] scanner - 🚀 SCANNER INICIADO
+2025-12-27 03:20:30 [INFO] scanner - 📅 Data/Hora: 27/12/2025 03:20:30
+2025-12-27 03:20:30 [INFO] scanner - 📂 Log: logs/scanner_2025-12-27.log
+2025-12-27 03:20:30 [INFO] scanner - ============================================================
+2025-12-27 03:20:30 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2025-12-27 03:20:33 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2025-12-27 03:20:33 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2025-12-27 03:20:33 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2025-12-27 03:20:33 [INFO] scanner - 📝 Sinal no ledger: 20251227_032033_988960 - BTC/USDT
+2025-12-27 03:20:33 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20251227_032033_988960
