@@ -381,3 +381,15 @@
 2026-01-24 18:29:58 [INFO] scanner -    ├─ Último alerta há 1549.8 minutos
 2026-01-24 18:29:58 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-01-24 18:29:58 [INFO] scanner -    └─ Próximo permitido em: 250.2 minutos
+2026-01-24 18:41:16 [INFO] scanner - ============================================================
+2026-01-24 18:41:16 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-01-24 18:41:16 [INFO] scanner - 📅 Data/Hora: 24/01/2026 18:41:16
+2026-01-24 18:41:16 [INFO] scanner - 📂 Log: logs/scanner_2026-01-24.log
+2026-01-24 18:41:16 [INFO] scanner - ============================================================
+2026-01-24 18:41:16 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-01-24 18:41:21 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-01-24 18:41:21 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=8.5, R:R=2.00
+2026-01-24 18:41:21 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-01-24 18:41:21 [INFO] scanner -    ├─ Último alerta há 1561.1 minutos
+2026-01-24 18:41:21 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-01-24 18:41:21 [INFO] scanner -    └─ Próximo permitido em: 238.9 minutos
