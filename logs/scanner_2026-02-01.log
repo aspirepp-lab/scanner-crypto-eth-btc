@@ -273,3 +273,32 @@
 2026-02-01 10:58:52 [INFO] scanner -    ├─ Último alerta há 438.9 minutos
 2026-02-01 10:58:52 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-02-01 10:58:52 [INFO] scanner -    └─ Próximo permitido em: 1361.1 minutos
+2026-02-01 11:27:12 [INFO] scanner - ============================================================
+2026-02-01 11:27:12 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-02-01 11:27:12 [INFO] scanner - 📅 Data/Hora: 01/02/2026 11:27:12
+2026-02-01 11:27:12 [INFO] scanner - 📂 Log: logs/scanner_2026-02-01.log
+2026-02-01 11:27:12 [INFO] scanner - ============================================================
+2026-02-01 11:27:12 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-02-01 11:27:16 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-02-01 11:27:16 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-02-01 11:27:16 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2026-02-01 11:27:17 [INFO] scanner - 📝 Sinal no ledger: 20260201_112717_051012 - BTC/USDT
+2026-02-01 11:27:17 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260201_112717_051012
+2026-02-01 11:27:19 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-02-01 11:27:19 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=8.3, R:R=2.00
+2026-02-01 11:27:19 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-02-01 11:27:19 [INFO] scanner -    ├─ Último alerta há 467.3 minutos
+2026-02-01 11:27:19 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-02-01 11:27:19 [INFO] scanner -    └─ Próximo permitido em: 1332.7 minutos
+2026-02-01 11:27:19 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-02-01 11:27:19 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-02-01 11:27:19 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-02-01 11:27:19 [INFO] scanner -    ├─ Último alerta há 467.3 minutos
+2026-02-01 11:27:19 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-02-01 11:27:19 [INFO] scanner -    └─ Próximo permitido em: 1332.7 minutos
+2026-02-01 11:27:19 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-02-01 11:27:19 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-02-01 11:27:19 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-02-01 11:27:19 [INFO] scanner -    ├─ Último alerta há 467.3 minutos
+2026-02-01 11:27:19 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-02-01 11:27:19 [INFO] scanner -    └─ Próximo permitido em: 1332.7 minutos
