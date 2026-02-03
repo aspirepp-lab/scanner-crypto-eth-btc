@@ -307,3 +307,9 @@
 2026-02-03 17:53:39 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
 2026-02-03 17:53:39 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
 2026-02-03 17:53:39 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-02-03 18:26:29 [INFO] scanner - ============================================================
+2026-02-03 18:26:29 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-02-03 18:26:29 [INFO] scanner - 📅 Data/Hora: 03/02/2026 18:26:29
+2026-02-03 18:26:29 [INFO] scanner - 📂 Log: logs/scanner_2026-02-03.log
+2026-02-03 18:26:29 [INFO] scanner - ============================================================
+2026-02-03 18:26:29 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
