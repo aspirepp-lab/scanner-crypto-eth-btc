@@ -310,3 +310,9 @@
 2026-02-28 09:28:38 [INFO] scanner -    ├─ Último alerta há 1786.8 minutos
 2026-02-28 09:28:38 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-02-28 09:28:38 [INFO] scanner -    └─ Próximo permitido em: 13.2 minutos
+2026-02-28 10:11:47 [INFO] scanner - ============================================================
+2026-02-28 10:11:47 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-02-28 10:11:47 [INFO] scanner - 📅 Data/Hora: 28/02/2026 10:11:47
+2026-02-28 10:11:47 [INFO] scanner - 📂 Log: logs/scanner_2026-02-28.log
+2026-02-28 10:11:47 [INFO] scanner - ============================================================
+2026-02-28 10:11:47 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
