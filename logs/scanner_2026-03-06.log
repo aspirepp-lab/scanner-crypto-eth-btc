@@ -333,3 +333,9 @@
 2026-03-06 20:20:33 [INFO] scanner -    ├─ Último alerta há 1600.3 minutos
 2026-03-06 20:20:33 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-03-06 20:20:33 [INFO] scanner -    └─ Próximo permitido em: 199.7 minutos
+2026-03-06 20:47:52 [INFO] scanner - ============================================================
+2026-03-06 20:47:52 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-03-06 20:47:52 [INFO] scanner - 📅 Data/Hora: 06/03/2026 20:47:52
+2026-03-06 20:47:52 [INFO] scanner - 📂 Log: logs/scanner_2026-03-06.log
+2026-03-06 20:47:52 [INFO] scanner - ============================================================
+2026-03-06 20:47:52 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
