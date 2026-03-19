@@ -298,3 +298,9 @@
 2026-03-19 18:54:16 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
 2026-03-19 18:54:17 [INFO] scanner - 📝 Sinal no ledger: 20260319_185417_441128 - BTC/USDT
 2026-03-19 18:54:17 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260319_185417_441128
+2026-03-19 19:19:45 [INFO] scanner - ============================================================
+2026-03-19 19:19:45 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-03-19 19:19:45 [INFO] scanner - 📅 Data/Hora: 19/03/2026 19:19:45
+2026-03-19 19:19:45 [INFO] scanner - 📂 Log: logs/scanner_2026-03-19.log
+2026-03-19 19:19:45 [INFO] scanner - ============================================================
+2026-03-19 19:19:45 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
