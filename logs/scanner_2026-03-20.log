@@ -34,3 +34,26 @@
 2026-03-20 05:06:19 [INFO] scanner -    ├─ Último alerta há 612.0 minutos
 2026-03-20 05:06:19 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-03-20 05:06:19 [INFO] scanner -    └─ Próximo permitido em: 1188.0 minutos
+2026-03-20 05:58:28 [INFO] scanner - ============================================================
+2026-03-20 05:58:28 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-03-20 05:58:28 [INFO] scanner - 📅 Data/Hora: 20/03/2026 05:58:28
+2026-03-20 05:58:28 [INFO] scanner - 📂 Log: logs/scanner_2026-03-20.log
+2026-03-20 05:58:28 [INFO] scanner - ============================================================
+2026-03-20 05:58:28 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-03-20 05:58:31 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-03-20 05:58:31 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-03-20 05:58:31 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-03-20 05:58:31 [INFO] scanner -    ├─ Último alerta há 664.3 minutos
+2026-03-20 05:58:31 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-03-20 05:58:31 [INFO] scanner -    └─ Próximo permitido em: 1135.7 minutos
+2026-03-20 05:58:32 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-03-20 05:58:32 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-03-20 05:58:32 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-03-20 05:58:32 [INFO] scanner -    ├─ Último alerta há 664.3 minutos
+2026-03-20 05:58:32 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-03-20 05:58:32 [INFO] scanner -    └─ Próximo permitido em: 1135.7 minutos
+2026-03-20 05:58:34 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-03-20 05:58:34 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-03-20 05:58:34 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-03-20 05:58:34 [INFO] scanner - 📝 Sinal no ledger: 20260320_055834_992630 - ETH/USDT
+2026-03-20 05:58:34 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260320_055834_992630
