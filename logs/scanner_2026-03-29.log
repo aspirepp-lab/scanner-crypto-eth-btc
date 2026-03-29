@@ -202,3 +202,19 @@
 2026-03-29 20:27:06 [INFO] scanner - 📂 Log: logs/scanner_2026-03-29.log
 2026-03-29 20:27:06 [INFO] scanner - ============================================================
 2026-03-29 20:27:06 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-03-29 20:55:22 [INFO] scanner - ============================================================
+2026-03-29 20:55:22 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-03-29 20:55:22 [INFO] scanner - 📅 Data/Hora: 29/03/2026 20:55:22
+2026-03-29 20:55:22 [INFO] scanner - 📂 Log: logs/scanner_2026-03-29.log
+2026-03-29 20:55:22 [INFO] scanner - ============================================================
+2026-03-29 20:55:22 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-03-29 20:55:26 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-03-29 20:55:26 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-03-29 20:55:26 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2026-03-29 20:55:27 [INFO] scanner - 📝 Sinal no ledger: 20260329_205527_116848 - BTC/USDT
+2026-03-29 20:55:27 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260329_205527_116848
+2026-03-29 20:55:29 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-03-29 20:55:29 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-03-29 20:55:29 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-03-29 20:55:30 [INFO] scanner - 📝 Sinal no ledger: 20260329_205530_085284 - ETH/USDT
+2026-03-29 20:55:30 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260329_205530_085284
