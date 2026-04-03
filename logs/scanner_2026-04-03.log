@@ -110,3 +110,16 @@
 2026-04-03 12:59:21 [INFO] scanner - 📂 Log: logs/scanner_2026-04-03.log
 2026-04-03 12:59:21 [INFO] scanner - ============================================================
 2026-04-03 12:59:21 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-04-03 13:43:33 [INFO] scanner - ============================================================
+2026-04-03 13:43:33 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-04-03 13:43:33 [INFO] scanner - 📅 Data/Hora: 03/04/2026 13:43:33
+2026-04-03 13:43:33 [INFO] scanner - 📂 Log: logs/scanner_2026-04-03.log
+2026-04-03 13:43:33 [INFO] scanner - ============================================================
+2026-04-03 13:43:33 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-04-03 13:43:42 [WARNING] root - Falha CoinGecko (macro): HTTPSConnectionPool(host='api.coingecko.com', port=443): Read timed out. (read timeout=8)
+2026-04-03 13:43:44 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-03 13:43:44 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-04-03 13:43:44 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-04-03 13:43:44 [INFO] scanner -    ├─ Último alerta há 520.8 minutos
+2026-04-03 13:43:44 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-04-03 13:43:44 [INFO] scanner -    └─ Próximo permitido em: 1279.2 minutos
