@@ -10,3 +10,19 @@
 2026-04-07 05:19:23 [INFO] scanner - 📂 Log: logs/scanner_2026-04-07.log
 2026-04-07 05:19:23 [INFO] scanner - ============================================================
 2026-04-07 05:19:23 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-04-07 06:41:19 [INFO] scanner - ============================================================
+2026-04-07 06:41:19 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-04-07 06:41:19 [INFO] scanner - 📅 Data/Hora: 07/04/2026 06:41:19
+2026-04-07 06:41:19 [INFO] scanner - 📂 Log: logs/scanner_2026-04-07.log
+2026-04-07 06:41:19 [INFO] scanner - ============================================================
+2026-04-07 06:41:19 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-04-07 06:41:22 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-07 06:41:22 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-04-07 06:41:22 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2026-04-07 06:41:22 [INFO] scanner - 📝 Sinal no ledger: 20260407_064122_800190 - BTC/USDT
+2026-04-07 06:41:22 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260407_064122_800190
+2026-04-07 06:41:24 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-07 06:41:24 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-04-07 06:41:24 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-04-07 06:41:25 [INFO] scanner - 📝 Sinal no ledger: 20260407_064125_414008 - ETH/USDT
+2026-04-07 06:41:25 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260407_064125_414008
