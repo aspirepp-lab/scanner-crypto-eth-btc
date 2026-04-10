@@ -136,3 +136,51 @@
 2026-04-10 10:12:32 [INFO] scanner -    ├─ Último alerta há 915.7 minutos
 2026-04-10 10:12:32 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-04-10 10:12:32 [INFO] scanner -    └─ Próximo permitido em: 884.3 minutos
+2026-04-10 11:20:29 [INFO] scanner - ============================================================
+2026-04-10 11:20:29 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-04-10 11:20:29 [INFO] scanner - 📅 Data/Hora: 10/04/2026 11:20:29
+2026-04-10 11:20:29 [INFO] scanner - 📂 Log: logs/scanner_2026-04-10.log
+2026-04-10 11:20:29 [INFO] scanner - ============================================================
+2026-04-10 11:20:29 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-04-10 11:20:32 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-10 11:20:32 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=10.0, R:R=2.08
+2026-04-10 11:20:32 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-04-10 11:20:32 [INFO] scanner -    ├─ Último alerta há 983.8 minutos
+2026-04-10 11:20:32 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-04-10 11:20:32 [INFO] scanner -    └─ Próximo permitido em: 816.2 minutos
+2026-04-10 11:20:32 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-10 11:20:32 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.8, R:R=2.08
+2026-04-10 11:20:32 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-04-10 11:20:32 [INFO] scanner -    ├─ Último alerta há 983.8 minutos
+2026-04-10 11:20:32 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-04-10 11:20:32 [INFO] scanner -    └─ Próximo permitido em: 816.2 minutos
+2026-04-10 11:20:33 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-10 11:20:33 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.8, R:R=2.08
+2026-04-10 11:20:33 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-04-10 11:20:33 [INFO] scanner -    ├─ Último alerta há 983.8 minutos
+2026-04-10 11:20:33 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-04-10 11:20:33 [INFO] scanner -    └─ Próximo permitido em: 816.2 minutos
+2026-04-10 11:20:33 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-10 11:20:33 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.8, R:R=2.08
+2026-04-10 11:20:33 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-04-10 11:20:33 [INFO] scanner -    ├─ Último alerta há 983.8 minutos
+2026-04-10 11:20:33 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-04-10 11:20:33 [INFO] scanner -    └─ Próximo permitido em: 816.2 minutos
+2026-04-10 11:20:35 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-10 11:20:35 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.8, R:R=2.00
+2026-04-10 11:20:35 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-04-10 11:20:35 [INFO] scanner -    ├─ Último alerta há 983.8 minutos
+2026-04-10 11:20:35 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-04-10 11:20:35 [INFO] scanner -    └─ Próximo permitido em: 816.2 minutos
+2026-04-10 11:20:35 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-10 11:20:35 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.8, R:R=2.00
+2026-04-10 11:20:35 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-04-10 11:20:35 [INFO] scanner -    ├─ Último alerta há 983.8 minutos
+2026-04-10 11:20:35 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-04-10 11:20:35 [INFO] scanner -    └─ Próximo permitido em: 816.2 minutos
+2026-04-10 11:20:35 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-10 11:20:35 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.8, R:R=2.00
+2026-04-10 11:20:35 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-04-10 11:20:35 [INFO] scanner -    ├─ Último alerta há 983.8 minutos
+2026-04-10 11:20:35 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-04-10 11:20:35 [INFO] scanner -    └─ Próximo permitido em: 816.2 minutos
