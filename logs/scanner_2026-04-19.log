@@ -120,3 +120,9 @@
 2026-04-19 10:47:06 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
 2026-04-19 10:47:07 [INFO] scanner - 📝 Sinal no ledger: 20260419_104707_214162 - ETH/USDT
 2026-04-19 10:47:07 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260419_104707_214162
+2026-04-19 11:36:04 [INFO] scanner - ============================================================
+2026-04-19 11:36:04 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-04-19 11:36:04 [INFO] scanner - 📅 Data/Hora: 19/04/2026 11:36:04
+2026-04-19 11:36:04 [INFO] scanner - 📂 Log: logs/scanner_2026-04-19.log
+2026-04-19 11:36:04 [INFO] scanner - ============================================================
+2026-04-19 11:36:04 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
