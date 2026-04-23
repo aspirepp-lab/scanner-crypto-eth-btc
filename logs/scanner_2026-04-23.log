@@ -82,3 +82,14 @@
 2026-04-23 10:05:43 [INFO] scanner - 📂 Log: logs/scanner_2026-04-23.log
 2026-04-23 10:05:43 [INFO] scanner - ============================================================
 2026-04-23 10:05:43 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-04-23 12:21:07 [INFO] scanner - ============================================================
+2026-04-23 12:21:07 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-04-23 12:21:07 [INFO] scanner - 📅 Data/Hora: 23/04/2026 12:21:07
+2026-04-23 12:21:07 [INFO] scanner - 📂 Log: logs/scanner_2026-04-23.log
+2026-04-23 12:21:07 [INFO] scanner - ============================================================
+2026-04-23 12:21:07 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-04-23 12:21:11 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-04-23 12:21:11 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-04-23 12:21:11 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2026-04-23 12:21:11 [INFO] scanner - 📝 Sinal no ledger: 20260423_122111_779062 - BTC/USDT
+2026-04-23 12:21:11 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260423_122111_779062
