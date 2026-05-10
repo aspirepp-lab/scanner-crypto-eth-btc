@@ -147,3 +147,27 @@
 2026-05-10 14:11:27 [INFO] scanner -    ├─ Último alerta há 387.5 minutos
 2026-05-10 14:11:27 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-05-10 14:11:27 [INFO] scanner -    └─ Próximo permitido em: 1412.5 minutos
+2026-05-10 15:04:26 [INFO] scanner - ============================================================
+2026-05-10 15:04:26 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-05-10 15:04:26 [INFO] scanner - 📅 Data/Hora: 10/05/2026 15:04:26
+2026-05-10 15:04:26 [INFO] scanner - 📂 Log: logs/scanner_2026-05-10.log
+2026-05-10 15:04:26 [INFO] scanner - ============================================================
+2026-05-10 15:04:26 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-05-10 15:04:30 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-05-10 15:04:30 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=8.0, R:R=2.08
+2026-05-10 15:04:30 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-05-10 15:04:30 [INFO] scanner -    ├─ Último alerta há 1641.6 minutos
+2026-05-10 15:04:30 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-05-10 15:04:30 [INFO] scanner -    └─ Próximo permitido em: 158.4 minutos
+2026-05-10 15:04:30 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-05-10 15:04:30 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.5, R:R=2.08
+2026-05-10 15:04:30 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-05-10 15:04:30 [INFO] scanner -    ├─ Último alerta há 1641.6 minutos
+2026-05-10 15:04:30 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-05-10 15:04:30 [INFO] scanner -    └─ Próximo permitido em: 158.4 minutos
+2026-05-10 15:04:33 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-05-10 15:04:33 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.8, R:R=2.00
+2026-05-10 15:04:33 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-05-10 15:04:33 [INFO] scanner -    ├─ Último alerta há 440.6 minutos
+2026-05-10 15:04:33 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-05-10 15:04:33 [INFO] scanner -    └─ Próximo permitido em: 1359.4 minutos
