@@ -40,3 +40,14 @@
 2026-05-17 09:04:41 [INFO] scanner -    ├─ Último alerta há 1693.1 minutos
 2026-05-17 09:04:41 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-05-17 09:04:41 [INFO] scanner -    └─ Próximo permitido em: 106.9 minutos
+2026-05-17 10:55:04 [INFO] scanner - ============================================================
+2026-05-17 10:55:04 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-05-17 10:55:04 [INFO] scanner - 📅 Data/Hora: 17/05/2026 10:55:04
+2026-05-17 10:55:04 [INFO] scanner - 📂 Log: logs/scanner_2026-05-17.log
+2026-05-17 10:55:04 [INFO] scanner - ============================================================
+2026-05-17 10:55:04 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-05-17 10:55:09 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-05-17 10:55:09 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.0, R:R=2.00
+2026-05-17 10:55:09 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-05-17 10:55:10 [INFO] scanner - 📝 Sinal no ledger: 20260517_105510_343659 - ETH/USDT
+2026-05-17 10:55:10 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260517_105510_343659
