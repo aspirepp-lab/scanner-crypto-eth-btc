@@ -24,3 +24,15 @@
 2026-05-27 15:37:38 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
 2026-05-27 15:37:38 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=8.3, R:R=2.08
 2026-05-27 15:37:38 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2026-05-27 17:53:07 [INFO] scanner - ============================================================
+2026-05-27 17:53:07 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-05-27 17:53:07 [INFO] scanner - 📅 Data/Hora: 27/05/2026 17:53:07
+2026-05-27 17:53:07 [INFO] scanner - 📂 Log: logs/scanner_2026-05-27.log
+2026-05-27 17:53:07 [INFO] scanner - ============================================================
+2026-05-27 17:53:07 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-05-27 17:53:10 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-05-27 17:53:10 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=8.3, R:R=2.08
+2026-05-27 17:53:10 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-05-27 17:53:10 [INFO] scanner -    ├─ Último alerta há 135.5 minutos
+2026-05-27 17:53:10 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-05-27 17:53:10 [INFO] scanner -    └─ Próximo permitido em: 1664.5 minutos
