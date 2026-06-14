@@ -64,3 +64,15 @@
 2026-06-14 18:01:35 [INFO] scanner - 📂 Log: logs/scanner_2026-06-14.log
 2026-06-14 18:01:35 [INFO] scanner - ============================================================
 2026-06-14 18:01:35 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-06-14 19:20:52 [INFO] scanner - ============================================================
+2026-06-14 19:20:52 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-06-14 19:20:52 [INFO] scanner - 📅 Data/Hora: 14/06/2026 19:20:52
+2026-06-14 19:20:52 [INFO] scanner - 📂 Log: logs/scanner_2026-06-14.log
+2026-06-14 19:20:52 [INFO] scanner - ============================================================
+2026-06-14 19:20:52 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-06-14 19:20:58 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-06-14 19:20:58 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.8, R:R=2.08
+2026-06-14 19:20:58 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2026-06-14 19:21:00 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-06-14 19:21:00 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.8, R:R=2.00
+2026-06-14 19:21:00 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
