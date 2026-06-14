@@ -76,3 +76,27 @@
 2026-06-14 19:21:00 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
 2026-06-14 19:21:00 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.8, R:R=2.00
 2026-06-14 19:21:00 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-06-14 20:43:12 [INFO] scanner - ============================================================
+2026-06-14 20:43:12 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-06-14 20:43:12 [INFO] scanner - 📅 Data/Hora: 14/06/2026 20:43:12
+2026-06-14 20:43:12 [INFO] scanner - 📂 Log: logs/scanner_2026-06-14.log
+2026-06-14 20:43:12 [INFO] scanner - ============================================================
+2026-06-14 20:43:12 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-06-14 20:43:17 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-06-14 20:43:17 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.8, R:R=2.08
+2026-06-14 20:43:17 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-06-14 20:43:17 [INFO] scanner -    ├─ Último alerta há 82.3 minutos
+2026-06-14 20:43:17 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-06-14 20:43:17 [INFO] scanner -    └─ Próximo permitido em: 1717.7 minutos
+2026-06-14 20:43:18 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-06-14 20:43:18 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.8, R:R=2.08
+2026-06-14 20:43:18 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-06-14 20:43:18 [INFO] scanner -    ├─ Último alerta há 82.3 minutos
+2026-06-14 20:43:18 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-06-14 20:43:18 [INFO] scanner -    └─ Próximo permitido em: 1717.7 minutos
+2026-06-14 20:43:20 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-06-14 20:43:20 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.8, R:R=2.00
+2026-06-14 20:43:20 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-06-14 20:43:20 [INFO] scanner -    ├─ Último alerta há 82.3 minutos
+2026-06-14 20:43:20 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-06-14 20:43:20 [INFO] scanner -    └─ Próximo permitido em: 1717.7 minutos
