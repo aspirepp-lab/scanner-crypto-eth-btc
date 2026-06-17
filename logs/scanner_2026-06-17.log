@@ -27,3 +27,26 @@
 2026-06-17 14:21:16 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
 2026-06-17 14:21:16 [INFO] scanner - 📝 Sinal no ledger: 20260617_142116_754806 - BTC/USDT
 2026-06-17 14:21:16 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260617_142116_754806
+2026-06-17 16:33:44 [INFO] scanner - ============================================================
+2026-06-17 16:33:44 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-06-17 16:33:44 [INFO] scanner - 📅 Data/Hora: 17/06/2026 16:33:44
+2026-06-17 16:33:44 [INFO] scanner - 📂 Log: logs/scanner_2026-06-17.log
+2026-06-17 16:33:44 [INFO] scanner - ============================================================
+2026-06-17 16:33:44 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-06-17 16:33:48 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-06-17 16:33:48 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-06-17 16:33:48 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-06-17 16:33:48 [INFO] scanner -    ├─ Último alerta há 132.5 minutos
+2026-06-17 16:33:48 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-06-17 16:33:48 [INFO] scanner -    └─ Próximo permitido em: 1667.5 minutos
+2026-06-17 16:33:49 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-06-17 16:33:49 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-06-17 16:33:49 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-06-17 16:33:49 [INFO] scanner -    ├─ Último alerta há 132.5 minutos
+2026-06-17 16:33:49 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-06-17 16:33:49 [INFO] scanner -    └─ Próximo permitido em: 1667.5 minutos
+2026-06-17 16:33:51 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-06-17 16:33:51 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-06-17 16:33:51 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-06-17 16:33:51 [INFO] scanner - 📝 Sinal no ledger: 20260617_163351_945880 - ETH/USDT
+2026-06-17 16:33:51 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260617_163351_945880
