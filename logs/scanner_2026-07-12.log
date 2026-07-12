@@ -136,3 +136,14 @@
 2026-07-12 19:05:24 [INFO] scanner -    ├─ Último alerta há 1795.2 minutos
 2026-07-12 19:05:24 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-07-12 19:05:24 [INFO] scanner -    └─ Próximo permitido em: 4.8 minutos
+2026-07-12 20:07:39 [INFO] scanner - ============================================================
+2026-07-12 20:07:39 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-07-12 20:07:39 [INFO] scanner - 📅 Data/Hora: 12/07/2026 20:07:39
+2026-07-12 20:07:39 [INFO] scanner - 📂 Log: logs/scanner_2026-07-12.log
+2026-07-12 20:07:39 [INFO] scanner - ============================================================
+2026-07-12 20:07:39 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-07-12 20:07:44 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-07-12 20:07:44 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-07-12 20:07:44 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-07-12 20:07:45 [INFO] scanner - 📝 Sinal no ledger: 20260712_200745_086934 - ETH/USDT
+2026-07-12 20:07:45 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260712_200745_086934
