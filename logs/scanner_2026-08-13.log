@@ -128,3 +128,10 @@
 2026-08-13 17:02:37 [INFO] scanner - 📂 Log: logs/scanner_2026-08-13.log
 2026-08-13 17:02:37 [INFO] scanner - ============================================================
 2026-08-13 17:02:37 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-08-13 18:00:18 [INFO] scanner - ============================================================
+2026-08-13 18:00:18 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-08-13 18:00:18 [INFO] scanner - 📅 Data/Hora: 13/08/2026 18:00:18
+2026-08-13 18:00:18 [INFO] scanner - 📂 Log: logs/scanner_2026-08-13.log
+2026-08-13 18:00:18 [INFO] scanner - ============================================================
+2026-08-13 18:00:18 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-08-13 18:00:27 [WARNING] root - Falha CoinGecko (macro): HTTPSConnectionPool(host='api.coingecko.com', port=443): Read timed out. (read timeout=8)
