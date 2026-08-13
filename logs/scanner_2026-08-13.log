@@ -1,0 +1,16 @@
+2026-08-13 04:13:49 [INFO] scanner - ============================================================
+2026-08-13 04:13:49 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-08-13 04:13:49 [INFO] scanner - 📅 Data/Hora: 13/08/2026 04:13:49
+2026-08-13 04:13:49 [INFO] scanner - 📂 Log: logs/scanner_2026-08-13.log
+2026-08-13 04:13:49 [INFO] scanner - ============================================================
+2026-08-13 04:13:49 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-08-13 04:13:53 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-08-13 04:13:53 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-08-13 04:13:53 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2026-08-13 04:13:53 [INFO] scanner - 📝 Sinal no ledger: 20260813_041353_647862 - BTC/USDT
+2026-08-13 04:13:53 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260813_041353_647862
+2026-08-13 04:13:55 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-08-13 04:13:55 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-08-13 04:13:55 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-08-13 04:13:56 [INFO] scanner - 📝 Sinal no ledger: 20260813_041356_792299 - ETH/USDT
+2026-08-13 04:13:56 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260813_041356_792299
