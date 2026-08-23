@@ -15,3 +15,15 @@
 2026-08-23 03:25:24 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
 2026-08-23 03:25:24 [INFO] scanner - 📝 Sinal no ledger: 20260823_032524_979912 - ETH/USDT
 2026-08-23 03:25:24 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260823_032524_979912
+2026-08-23 04:08:59 [INFO] scanner - ============================================================
+2026-08-23 04:08:59 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-08-23 04:08:59 [INFO] scanner - 📅 Data/Hora: 23/08/2026 04:08:59
+2026-08-23 04:08:59 [INFO] scanner - 📂 Log: logs/scanner_2026-08-23.log
+2026-08-23 04:08:59 [INFO] scanner - ============================================================
+2026-08-23 04:08:59 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-08-23 04:09:03 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-08-23 04:09:03 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-08-23 04:09:03 [INFO] scanner - ⏸️  Throttle ativo [BTC/USDT]:
+2026-08-23 04:09:03 [INFO] scanner -    ├─ Último alerta há 1081.7 minutos
+2026-08-23 04:09:03 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-08-23 04:09:03 [INFO] scanner -    └─ Próximo permitido em: 718.3 minutos
