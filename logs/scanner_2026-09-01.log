@@ -16,3 +16,23 @@
 2026-09-01 12:19:51 [INFO] scanner - 📂 Log: logs/scanner_2026-09-01.log
 2026-09-01 12:19:51 [INFO] scanner - ============================================================
 2026-09-01 12:19:51 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-09-01 15:40:26 [INFO] scanner - ============================================================
+2026-09-01 15:40:26 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-09-01 15:40:26 [INFO] scanner - 📅 Data/Hora: 01/09/2026 15:40:26
+2026-09-01 15:40:26 [INFO] scanner - 📂 Log: logs/scanner_2026-09-01.log
+2026-09-01 15:40:26 [INFO] scanner - ============================================================
+2026-09-01 15:40:26 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-09-01 15:40:29 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-09-01 15:40:29 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=7.3, R:R=2.08
+2026-09-01 15:40:29 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
+2026-09-01 15:40:30 [INFO] scanner - 📝 Sinal no ledger: 20260901_154030_311517 - BTC/USDT
+2026-09-01 15:40:30 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260901_154030_311517
+2026-09-01 15:40:32 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-09-01 15:40:32 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-09-01 15:40:32 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-09-01 15:40:32 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-09-01 15:40:32 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-09-01 15:40:32 [INFO] scanner - ⏸️  Throttle ativo [ETH/USDT]:
+2026-09-01 15:40:32 [INFO] scanner -    ├─ Último alerta há 0.0 minutos
+2026-09-01 15:40:32 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
+2026-09-01 15:40:32 [INFO] scanner -    └─ Próximo permitido em: 1800.0 minutos
