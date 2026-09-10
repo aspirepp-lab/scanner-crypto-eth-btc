@@ -57,3 +57,9 @@
 2026-09-09 19:46:38 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
 2026-09-09 19:46:38 [INFO] scanner - 📝 Sinal no ledger: 20260909_194638_752597 - ETH/USDT
 2026-09-09 19:46:38 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20260909_194638_752597
+2026-09-09 21:43:27 [INFO] scanner - ============================================================
+2026-09-09 21:43:27 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-09-09 21:43:27 [INFO] scanner - 📅 Data/Hora: 09/09/2026 21:43:27
+2026-09-09 21:43:27 [INFO] scanner - 📂 Log: logs/scanner_2026-09-09.log
+2026-09-09 21:43:27 [INFO] scanner - ============================================================
+2026-09-09 21:43:27 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
