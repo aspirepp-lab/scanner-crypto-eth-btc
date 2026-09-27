@@ -62,3 +62,9 @@
 2026-09-26 20:35:32 [INFO] scanner -    ├─ Último alerta há 782.4 minutos
 2026-09-26 20:35:32 [INFO] scanner -    ├─ Tempo mínimo: 1800 minutos
 2026-09-26 20:35:32 [INFO] scanner -    └─ Próximo permitido em: 1017.6 minutos
+2026-09-26 22:46:58 [INFO] scanner - ============================================================
+2026-09-26 22:46:58 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-09-26 22:46:58 [INFO] scanner - 📅 Data/Hora: 26/09/2026 22:46:58
+2026-09-26 22:46:58 [INFO] scanner - 📂 Log: logs/scanner_2026-09-26.log
+2026-09-26 22:46:58 [INFO] scanner - ============================================================
+2026-09-26 22:46:58 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
