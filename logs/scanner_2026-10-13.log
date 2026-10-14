@@ -27,3 +27,14 @@
 2026-10-13 20:32:30 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
 2026-10-13 20:32:31 [INFO] scanner - 📝 Sinal no ledger: 20261013_203231_347984 - BTC/USDT
 2026-10-13 20:32:31 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20261013_203231_347984
+2026-10-13 23:08:57 [INFO] scanner - ============================================================
+2026-10-13 23:08:57 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-10-13 23:08:57 [INFO] scanner - 📅 Data/Hora: 13/10/2026 23:08:57
+2026-10-13 23:08:57 [INFO] scanner - 📂 Log: logs/scanner_2026-10-13.log
+2026-10-13 23:08:57 [INFO] scanner - ============================================================
+2026-10-13 23:08:57 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-10-13 23:09:03 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-10-13 23:09:03 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=8.8, R:R=2.00
+2026-10-13 23:09:03 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-10-13 23:09:03 [INFO] scanner - 📝 Sinal no ledger: 20261013_230903_664352 - ETH/USDT
+2026-10-13 23:09:03 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20261013_230903_664352
