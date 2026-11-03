@@ -1,0 +1,9 @@
+2026-11-03 00:46:59 [INFO] scanner - ============================================================
+2026-11-03 00:46:59 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-11-03 00:46:59 [INFO] scanner - 📅 Data/Hora: 03/11/2026 00:46:59
+2026-11-03 00:46:59 [INFO] scanner - 📂 Log: logs/scanner_2026-11-03.log
+2026-11-03 00:46:59 [INFO] scanner - ============================================================
+2026-11-03 00:46:59 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-11-03 00:47:02 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-11-03 00:47:02 [INFO] scanner - ✅ Validações OK [BTC/USDT]: Score=8.3, R:R=2.08
+2026-11-03 00:47:02 [INFO] scanner - ✅ Throttle OK [BTC/USDT]: Pode enviar
