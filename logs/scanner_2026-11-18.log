@@ -4,3 +4,14 @@
 2026-11-18 00:58:19 [INFO] scanner - 📂 Log: logs/scanner_2026-11-18.log
 2026-11-18 00:58:19 [INFO] scanner - ============================================================
 2026-11-18 00:58:19 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-11-18 11:51:12 [INFO] scanner - ============================================================
+2026-11-18 11:51:12 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-11-18 11:51:12 [INFO] scanner - 📅 Data/Hora: 18/11/2026 11:51:12
+2026-11-18 11:51:12 [INFO] scanner - 📂 Log: logs/scanner_2026-11-18.log
+2026-11-18 11:51:12 [INFO] scanner - ============================================================
+2026-11-18 11:51:12 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
+2026-11-18 11:51:17 [WARNING] root - Bloco de componentes falhou: cannot unpack non-iterable int object
+2026-11-18 11:51:17 [INFO] scanner - ✅ Validações OK [ETH/USDT]: Score=7.3, R:R=2.00
+2026-11-18 11:51:17 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
+2026-11-18 11:51:17 [INFO] scanner - 📝 Sinal no ledger: 20261118_115117_633380 - ETH/USDT
+2026-11-18 11:51:17 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20261118_115117_633380
