@@ -15,3 +15,9 @@
 2026-11-18 11:51:17 [INFO] scanner - ✅ Throttle OK [ETH/USDT]: Pode enviar
 2026-11-18 11:51:17 [INFO] scanner - 📝 Sinal no ledger: 20261118_115117_633380 - ETH/USDT
 2026-11-18 11:51:17 [INFO] scanner - 📨 Alerta enviado | ID Ledger: 20261118_115117_633380
+2026-11-18 19:25:47 [INFO] scanner - ============================================================
+2026-11-18 19:25:47 [INFO] scanner - 🚀 SCANNER INICIADO
+2026-11-18 19:25:47 [INFO] scanner - 📅 Data/Hora: 18/11/2026 19:25:47
+2026-11-18 19:25:47 [INFO] scanner - 📂 Log: logs/scanner_2026-11-18.log
+2026-11-18 19:25:47 [INFO] scanner - ============================================================
+2026-11-18 19:25:47 [INFO] scanner - 📝 PAPER MODE ATIVO - Apenas registro e análise
